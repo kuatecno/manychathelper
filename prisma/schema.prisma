@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User/Helper model - stores Instagram users who connect
+model User {
+  id              String    @id @default(cuid())
+  manychatId      String    @unique // Manychat subscriber ID
+  instagramId     String?   @unique
+  firstName       String?
+  lastName        String?
+  timezone        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  bookings        Booking[]
+  qrCodes         QRCode[]
+}
+
+// Helper model - your staff/helpers who provide services
+model Helper {
+  id              String    @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  availabilities  Availability[]
+  bookings        Booking[]
+}
+
+// Availability slots for helpers
+model Availability {
+  id              String    @id @default(cuid())
+  helperId        String
+  dayOfWeek       Int       // 0-6 (Sunday to Saturday)
+  startTime       String    // "09:00"
+  endTime         String    // "17:00"
+  slotDuration    Int       @default(30) // minutes per slot
+  active          Boolean   @default(true)
+
+  helper          Helper    @relation(fields: [helperId], references: [id], onDelete: Cascade)
+
+  @@index([helperId])
+}
+
+// Bookings
+model Booking {
+  id              String    @id @default(cuid())
+  userId          String
+  helperId        String
+  startTime       DateTime
+  endTime         DateTime
+  status          String    @default("pending") // pending, confirmed, cancelled, completed
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  helper          Helper    @relation(fields: [helperId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([helperId])
+  @@index([startTime])
+}
+
+// QR Codes for promotions/validation
+model QRCode {
+  id              String    @id @default(cuid())
+  userId          String
+  code            String    @unique // The actual QR code data
+  type            String    // "promotion", "validation", "discount"
+  metadata        String?   // JSON string for flexible data
+  expiresAt       DateTime?
+  scannedAt       DateTime?
+  scannedBy       String?   // Who scanned it
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([code])
+}
