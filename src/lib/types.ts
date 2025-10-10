@@ -21,7 +21,7 @@ export const CreateBookingSchema = z.object({
 export const GenerateQRSchema = z.object({
   manychat_user_id: z.string(),
   type: z.enum(['promotion', 'validation', 'discount']),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   expires_in_days: z.number().optional(),
 });
 
