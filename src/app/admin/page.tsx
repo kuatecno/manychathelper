@@ -50,7 +50,10 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetch('/api/admin/stats')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch stats');
+        return res.json();
+      })
       .then((data) => {
         setStats(data);
         setLoading(false);
@@ -69,10 +72,13 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!stats) {
+  if (!stats || !stats.bookings) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="text-destructive">Failed to load stats</div>
+      <div className="flex h-96 flex-col items-center justify-center gap-4">
+        <div className="text-destructive text-lg">Failed to load dashboard stats</div>
+        <div className="text-sm text-muted-foreground">
+          Make sure the database is set up. Run: npm run prisma:push && npm run prisma:seed
+        </div>
       </div>
     );
   }
