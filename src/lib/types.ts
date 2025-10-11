@@ -20,9 +20,10 @@ export const CreateBookingSchema = z.object({
 // QR Code generation schema
 export const GenerateQRSchema = z.object({
   manychat_user_id: z.string(),
-  type: z.enum(['promotion', 'validation', 'discount']),
-  metadata: z.record(z.string(), z.any()).optional(),
-  expires_in_days: z.number().optional(),
+  tool_id: z.string(), // Required: which QR generator tool to use
+  type: z.enum(['promotion', 'validation', 'discount']).optional(), // Override tool default
+  metadata: z.record(z.string(), z.any()).optional(), // Merged with tool default
+  expires_in_days: z.number().optional(), // Override tool default
 });
 
 // Tool availability schema

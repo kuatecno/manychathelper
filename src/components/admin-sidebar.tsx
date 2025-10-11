@@ -22,7 +22,6 @@ const navigation = [
   { name: 'Bookings', href: '/admin/bookings', icon: Calendar },
   { name: 'QR Codes', href: '/admin/qr', icon: QrCode },
   { name: 'Users', href: '/admin/users', icon: UserCircle },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export function AdminSidebar() {

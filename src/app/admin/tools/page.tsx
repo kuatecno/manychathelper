@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -30,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Wrench } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wrench, Palette, Code, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Tool {
@@ -44,6 +46,46 @@ interface Tool {
   createdAt: string;
 }
 
+interface QRConfig {
+  qrAppearance: {
+    width: number;
+    margin: number;
+    errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+    darkColor: string;
+    lightColor: string;
+  };
+  qrFormat: {
+    prefix: string;
+    includeUserId: boolean;
+    includeTimestamp: boolean;
+    includeRandom: boolean;
+    customFormat: string;
+  };
+  type: string;
+  expiresInDays: number | null;
+  defaultMetadata: string; // JSON string
+}
+
+const defaultQRConfig: QRConfig = {
+  qrAppearance: {
+    width: 300,
+    margin: 2,
+    errorCorrectionLevel: 'H',
+    darkColor: '#000000',
+    lightColor: '#FFFFFF',
+  },
+  qrFormat: {
+    prefix: 'QR',
+    includeUserId: true,
+    includeTimestamp: true,
+    includeRandom: true,
+    customFormat: '{PREFIX}-{USER_ID}-{TIMESTAMP}-{RANDOM}',
+  },
+  type: 'promotion',
+  expiresInDays: 30,
+  defaultMetadata: '{\n  "campaign": "summer_sale"\n}',
+};
+
 export default function ToolsPage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +95,7 @@ export default function ToolsPage() {
     type: 'qr_generator',
     description: '',
   });
+  const [qrConfig, setQRConfig] = useState<QRConfig>(defaultQRConfig);
 
   useEffect(() => {
     fetchTools();
@@ -101,20 +144,40 @@ export default function ToolsPage() {
     e.preventDefault();
 
     try {
+      // Prepare config based on tool type
+      let config = null;
+      if (formData.type === 'qr_generator') {
+        config = qrConfig;
+      }
+
       const res = await fetch('/api/admin/tools', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          config: config ? JSON.stringify(config) : null,
+        }),
       });
 
       if (res.ok) {
         setDialogOpen(false);
         setFormData({ name: '', type: 'qr_generator', description: '' });
+        setQRConfig(defaultQRConfig);
         fetchTools();
       }
     } catch (error) {
       console.error('Error creating tool:', error);
     }
+  };
+
+  const generatePreviewCode = () => {
+    let preview = qrConfig.qrFormat.customFormat;
+    preview = preview.replace('{PREFIX}', qrConfig.qrFormat.prefix);
+    preview = preview.replace('{USER_ID}', 'clx8h2j9');
+    preview = preview.replace('{TIMESTAMP}', Date.now().toString());
+    preview = preview.replace('{RANDOM}', 'a7k9p2');
+    preview = preview.replace('{TYPE}', qrConfig.type.toUpperCase());
+    return preview;
   };
 
   const getToolTypeBadge = (type: string) => {
@@ -155,7 +218,7 @@ export default function ToolsPage() {
               Add Tool
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Tool</DialogTitle>
               <DialogDescription>
@@ -206,6 +269,333 @@ export default function ToolsPage() {
                     }
                   />
                 </div>
+
+                {/* QR Generator Configuration */}
+                {formData.type === 'qr_generator' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">QR Code Configuration</CardTitle>
+                      <CardDescription>
+                        Configure appearance, format, and campaign settings for this QR generator
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Tabs defaultValue="appearance" className="space-y-4">
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="appearance">
+                            <Palette className="mr-2 h-4 w-4" />
+                            Appearance
+                          </TabsTrigger>
+                          <TabsTrigger value="format">
+                            <Code className="mr-2 h-4 w-4" />
+                            Format
+                          </TabsTrigger>
+                          <TabsTrigger value="campaign">
+                            <Settings className="mr-2 h-4 w-4" />
+                            Campaign
+                          </TabsTrigger>
+                        </TabsList>
+
+                        {/* Appearance Tab */}
+                        <TabsContent value="appearance" className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="width">Size (pixels)</Label>
+                              <Input
+                                id="width"
+                                type="number"
+                                value={qrConfig.qrAppearance.width}
+                                onChange={(e) =>
+                                  setQRConfig({
+                                    ...qrConfig,
+                                    qrAppearance: {
+                                      ...qrConfig.qrAppearance,
+                                      width: parseInt(e.target.value),
+                                    },
+                                  })
+                                }
+                                min={100}
+                                max={1000}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="margin">Margin</Label>
+                              <Input
+                                id="margin"
+                                type="number"
+                                value={qrConfig.qrAppearance.margin}
+                                onChange={(e) =>
+                                  setQRConfig({
+                                    ...qrConfig,
+                                    qrAppearance: {
+                                      ...qrConfig.qrAppearance,
+                                      margin: parseInt(e.target.value),
+                                    },
+                                  })
+                                }
+                                min={0}
+                                max={10}
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="darkColor">QR Color</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="darkColor"
+                                  type="color"
+                                  value={qrConfig.qrAppearance.darkColor}
+                                  onChange={(e) =>
+                                    setQRConfig({
+                                      ...qrConfig,
+                                      qrAppearance: {
+                                        ...qrConfig.qrAppearance,
+                                        darkColor: e.target.value,
+                                      },
+                                    })
+                                  }
+                                  className="w-20"
+                                />
+                                <Input
+                                  type="text"
+                                  value={qrConfig.qrAppearance.darkColor}
+                                  onChange={(e) =>
+                                    setQRConfig({
+                                      ...qrConfig,
+                                      qrAppearance: {
+                                        ...qrConfig.qrAppearance,
+                                        darkColor: e.target.value,
+                                      },
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="lightColor">Background Color</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="lightColor"
+                                  type="color"
+                                  value={qrConfig.qrAppearance.lightColor}
+                                  onChange={(e) =>
+                                    setQRConfig({
+                                      ...qrConfig,
+                                      qrAppearance: {
+                                        ...qrConfig.qrAppearance,
+                                        lightColor: e.target.value,
+                                      },
+                                    })
+                                  }
+                                  className="w-20"
+                                />
+                                <Input
+                                  type="text"
+                                  value={qrConfig.qrAppearance.lightColor}
+                                  onChange={(e) =>
+                                    setQRConfig({
+                                      ...qrConfig,
+                                      qrAppearance: {
+                                        ...qrConfig.qrAppearance,
+                                        lightColor: e.target.value,
+                                      },
+                                    })
+                                  }
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="errorCorrection">Error Correction</Label>
+                              <select
+                                id="errorCorrection"
+                                value={qrConfig.qrAppearance.errorCorrectionLevel}
+                                onChange={(e) =>
+                                  setQRConfig({
+                                    ...qrConfig,
+                                    qrAppearance: {
+                                      ...qrConfig.qrAppearance,
+                                      errorCorrectionLevel: e.target.value as 'L' | 'M' | 'Q' | 'H',
+                                    },
+                                  })
+                                }
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              >
+                                <option value="L">Low (7%)</option>
+                                <option value="M">Medium (15%)</option>
+                                <option value="Q">Quartile (25%)</option>
+                                <option value="H">High (30%)</option>
+                              </select>
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        {/* Format Tab */}
+                        <TabsContent value="format" className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="prefix">Prefix</Label>
+                            <Input
+                              id="prefix"
+                              value={qrConfig.qrFormat.prefix}
+                              onChange={(e) =>
+                                setQRConfig({
+                                  ...qrConfig,
+                                  qrFormat: { ...qrConfig.qrFormat, prefix: e.target.value },
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Include in QR Code:</Label>
+                            <div className="space-y-2">
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={qrConfig.qrFormat.includeUserId}
+                                  onChange={(e) =>
+                                    setQRConfig({
+                                      ...qrConfig,
+                                      qrFormat: {
+                                        ...qrConfig.qrFormat,
+                                        includeUserId: e.target.checked,
+                                      },
+                                    })
+                                  }
+                                  className="h-4 w-4"
+                                />
+                                <span className="text-sm">User ID</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={qrConfig.qrFormat.includeTimestamp}
+                                  onChange={(e) =>
+                                    setQRConfig({
+                                      ...qrConfig,
+                                      qrFormat: {
+                                        ...qrConfig.qrFormat,
+                                        includeTimestamp: e.target.checked,
+                                      },
+                                    })
+                                  }
+                                  className="h-4 w-4"
+                                />
+                                <span className="text-sm">Timestamp</span>
+                              </label>
+                              <label className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={qrConfig.qrFormat.includeRandom}
+                                  onChange={(e) =>
+                                    setQRConfig({
+                                      ...qrConfig,
+                                      qrFormat: {
+                                        ...qrConfig.qrFormat,
+                                        includeRandom: e.target.checked,
+                                      },
+                                    })
+                                  }
+                                  className="h-4 w-4"
+                                />
+                                <span className="text-sm">Random string</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="customFormat">Custom Format</Label>
+                            <Input
+                              id="customFormat"
+                              value={qrConfig.qrFormat.customFormat}
+                              onChange={(e) =>
+                                setQRConfig({
+                                  ...qrConfig,
+                                  qrFormat: {
+                                    ...qrConfig.qrFormat,
+                                    customFormat: e.target.value,
+                                  },
+                                })
+                              }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Variables: {'{PREFIX}'}, {'{TYPE}'}, {'{USER_ID}'}, {'{TIMESTAMP}'},{' '}
+                              {'{RANDOM}'}
+                            </p>
+                          </div>
+
+                          <div className="rounded-lg border bg-muted/50 p-4">
+                            <Label className="text-sm font-semibold">Preview:</Label>
+                            <p className="mt-2 font-mono text-sm">{generatePreviewCode()}</p>
+                          </div>
+                        </TabsContent>
+
+                        {/* Campaign Tab */}
+                        <TabsContent value="campaign" className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="qrType">Default Type</Label>
+                            <Select
+                              value={qrConfig.type}
+                              onValueChange={(value) =>
+                                setQRConfig({ ...qrConfig, type: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="promotion">Promotion</SelectItem>
+                                <SelectItem value="discount">Discount</SelectItem>
+                                <SelectItem value="validation">Validation</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              Can be overridden in Manychat request
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="expiresInDays">Default Expiration (days)</Label>
+                            <Input
+                              id="expiresInDays"
+                              type="number"
+                              value={qrConfig.expiresInDays || ''}
+                              onChange={(e) =>
+                                setQRConfig({
+                                  ...qrConfig,
+                                  expiresInDays: e.target.value ? parseInt(e.target.value) : null,
+                                })
+                              }
+                              placeholder="Leave empty for no expiration"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Can be overridden in Manychat request
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="metadata">Default Metadata (JSON)</Label>
+                            <Textarea
+                              id="metadata"
+                              value={qrConfig.defaultMetadata}
+                              onChange={(e) =>
+                                setQRConfig({ ...qrConfig, defaultMetadata: e.target.value })
+                              }
+                              placeholder='{\n  "campaign": "summer_sale",\n  "discount": 20\n}'
+                              rows={6}
+                              className="font-mono text-xs"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Optional. Can be merged with Manychat request metadata
+                            </p>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
               <DialogFooter>
                 <Button

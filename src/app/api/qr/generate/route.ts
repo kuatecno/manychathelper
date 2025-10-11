@@ -8,6 +8,42 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = GenerateQRSchema.parse(body);
 
+    // Load tool configuration
+    const tool = await prisma.tool.findUnique({
+      where: { id: validated.tool_id },
+    });
+
+    if (!tool) {
+      return NextResponse.json(
+        { error: 'Tool not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!tool.active) {
+      return NextResponse.json(
+        { error: 'Tool is not active' },
+        { status: 400 }
+      );
+    }
+
+    if (tool.type !== 'qr_generator') {
+      return NextResponse.json(
+        { error: 'Tool is not a QR generator' },
+        { status: 400 }
+      );
+    }
+
+    // Parse tool config
+    let toolConfig = null;
+    if (tool.config) {
+      try {
+        toolConfig = JSON.parse(tool.config);
+      } catch (error) {
+        console.warn('Could not parse tool config, using defaults');
+      }
+    }
+
     // Find or create user
     let user = await prisma.user.findUnique({
       where: { manychatId: validated.manychat_user_id },
@@ -21,36 +57,47 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Load QR format settings from database
-    let formatSettings = null;
-    try {
-      const formatSetting = await prisma.settings.findUnique({
-        where: { key: 'qr_format' },
-      });
-      if (formatSetting) {
-        formatSettings = JSON.parse(formatSetting.value);
-      }
-    } catch (error) {
-      console.warn('Could not load format settings, using defaults');
+    // Determine QR type (request overrides tool default)
+    const qrType = validated.type || toolConfig?.type || 'promotion';
+
+    // Generate unique code with tool's format settings
+    const code = generateUniqueCode(
+      user.id,
+      qrType,
+      toolConfig?.qrFormat
+    );
+
+    // Calculate expiration (request overrides tool default)
+    let expiresAt: Date | null = null;
+    const expiresInDays = validated.expires_in_days ?? toolConfig?.expiresInDays;
+    if (expiresInDays) {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + expiresInDays);
     }
 
-    // Generate unique code with settings
-    const code = generateUniqueCode(user.id, validated.type, formatSettings);
-
-    // Calculate expiration
-    let expiresAt: Date | null = null;
-    if (validated.expires_in_days) {
-      expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + validated.expires_in_days);
+    // Merge metadata (tool default + request override)
+    let mergedMetadata: any = {};
+    if (toolConfig?.defaultMetadata) {
+      try {
+        mergedMetadata = JSON.parse(toolConfig.defaultMetadata);
+      } catch (error) {
+        console.warn('Could not parse tool default metadata');
+      }
+    }
+    if (validated.metadata) {
+      mergedMetadata = { ...mergedMetadata, ...validated.metadata };
     }
 
     // Create QR code record
     const qrCode = await prisma.qRCode.create({
       data: {
         userId: user.id,
+        toolId: tool.id,
         code,
-        type: validated.type,
-        metadata: validated.metadata ? JSON.stringify(validated.metadata) : null,
+        type: qrType,
+        metadata: Object.keys(mergedMetadata).length > 0
+          ? JSON.stringify(mergedMetadata)
+          : null,
         expiresAt,
       },
     });

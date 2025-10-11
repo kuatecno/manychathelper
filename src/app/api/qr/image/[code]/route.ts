@@ -9,17 +9,20 @@ export async function GET(
   try {
     const { code } = await params;
 
-    // Load QR appearance settings from database
+    // Find QR code and load tool config
     let appearanceSettings = null;
     try {
-      const appearanceSetting = await prisma.settings.findUnique({
-        where: { key: 'qr_appearance' },
+      const qrCode = await prisma.qRCode.findUnique({
+        where: { code },
+        include: { tool: true },
       });
-      if (appearanceSetting) {
-        appearanceSettings = JSON.parse(appearanceSetting.value);
+
+      if (qrCode?.tool?.config) {
+        const toolConfig = JSON.parse(qrCode.tool.config);
+        appearanceSettings = toolConfig.qrAppearance;
       }
     } catch (error) {
-      console.warn('Could not load appearance settings, using defaults');
+      console.warn('Could not load QR appearance from tool config, using defaults');
     }
 
     // Generate QR code as PNG buffer with settings

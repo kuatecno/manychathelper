@@ -26,19 +26,28 @@ model User {
 }
 
 // Tool model - mini-applications users can access (QR generator, booking tool, forms, etc.)
+// For qr_generator type, config JSON structure:
+// {
+//   "qrAppearance": { "width": 300, "margin": 2, "errorCorrectionLevel": "H", "darkColor": "#000000", "lightColor": "#FFFFFF" },
+//   "qrFormat": { "prefix": "QR", "includeUserId": true, "includeTimestamp": true, "includeRandom": true, "customFormat": "{PREFIX}-{USER_ID}-{TIMESTAMP}-{RANDOM}" },
+//   "type": "promotion",
+//   "expiresInDays": 30,
+//   "defaultMetadata": { "campaign": "summer_sale" }
+// }
 model Tool {
   id              String    @id @default(cuid())
   name            String
   type            String    // "qr_generator", "booking", "form_builder", "event_rsvp", "poll", "waitlist"
   description     String?
   active          Boolean   @default(true)
-  config          String?   // JSON string for tool-specific configuration
+  config          String?   // JSON string for tool-specific configuration (see comments above)
   manychatFlowId  String?   // Optional Manychat flow integration ID
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   bookings        Booking[]
   availabilities  Availability[]
+  qrCodes         QRCode[]
 }
 
 // Availability slots for booking tool
@@ -80,6 +89,7 @@ model Booking {
 model QRCode {
   id              String    @id @default(cuid())
   userId          String
+  toolId          String    // Which tool/campaign generated this QR
   code            String    @unique // The actual QR code data
   type            String    // "promotion", "validation", "discount"
   metadata        String?   // JSON string for flexible data
@@ -90,16 +100,10 @@ model QRCode {
   createdAt       DateTime  @default(now())
 
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool            Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([toolId])
   @@index([code])
 }
 
-// System Settings
-model Settings {
-  id              String    @id @default(cuid())
-  key             String    @unique // "qr_appearance", "qr_format"
-  value           String    // JSON string
-  updatedAt       DateTime  @updatedAt
-  createdAt       DateTime  @default(now())
-}
