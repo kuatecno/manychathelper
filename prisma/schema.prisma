@@ -36,9 +36,10 @@ model User {
 
   bookings        Booking[]
   qrCodes         QRCode[]
+  conversations   Conversation[]
 }
 
-// Tool model - mini-applications users can access (QR generator, booking tool, forms, etc.)
+// Tool model - mini-applications users can access (QR generator, booking tool, forms, AI chat, etc.)
 // For qr_generator type, config JSON structure:
 // {
 //   "qrAppearance": { "width": 300, "margin": 2, "errorCorrectionLevel": "H", "darkColor": "#000000", "lightColor": "#FFFFFF" },
@@ -47,11 +48,21 @@ model User {
 //   "expiresInDays": 30,
 //   "defaultMetadata": { "campaign": "summer_sale" }
 // }
+// For ai_chat type, config JSON structure:
+// {
+//   "aiProvider": "openai",
+//   "model": "gpt-4",
+//   "apiKey": "sk-...",
+//   "systemPrompt": "You are a helpful assistant...",
+//   "temperature": 0.7,
+//   "maxTokens": 500,
+//   "conversationMemory": true
+// }
 model Tool {
   id              String    @id @default(cuid())
   adminId         String    // Admin who owns this tool
   name            String
-  type            String    // "qr_generator", "booking", "form_builder", "event_rsvp", "poll", "waitlist"
+  type            String    // "qr_generator", "booking", "form_builder", "event_rsvp", "poll", "waitlist", "ai_chat", "ai_image", "ai_assistant"
   description     String?
   active          Boolean   @default(true)
   config          String?   // JSON string for tool-specific configuration (see comments above)
@@ -63,6 +74,7 @@ model Tool {
   bookings        Booking[]
   availabilities  Availability[]
   qrCodes         QRCode[]
+  conversations   Conversation[]
 
   @@index([adminId])
 }
@@ -122,5 +134,41 @@ model QRCode {
   @@index([userId])
   @@index([toolId])
   @@index([code])
+}
+
+// Conversation - stores AI chat conversations per user and tool
+model Conversation {
+  id              String    @id @default(cuid())
+  userId          String
+  toolId          String    // Which AI tool this conversation belongs to
+  title           String?   // Optional conversation title
+  active          Boolean   @default(true)
+  metadata        String?   // JSON string for additional context
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool            Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  messages        AIMessage[]
+
+  @@index([userId])
+  @@index([toolId])
+  @@index([active])
+}
+
+// AIMessage - individual messages in a conversation
+model AIMessage {
+  id              String    @id @default(cuid())
+  conversationId  String
+  role            String    // "user", "assistant", "system"
+  content         String    @db.Text // Message content
+  tokens          Int?      // Token count for this message
+  metadata        String?   // JSON string for additional data
+  createdAt       DateTime  @default(now())
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
 }
 

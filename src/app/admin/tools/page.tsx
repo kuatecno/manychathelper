@@ -183,6 +183,8 @@ export default function ToolsPage() {
   const getToolTypeBadge = (type: string) => {
     const badges: Record<string, { label: string; variant: any }> = {
       qr_generator: { label: 'QR Generator', variant: 'default' },
+      ai_chat: { label: 'AI Chat', variant: 'default' },
+      ai_assistant: { label: 'AI Assistant', variant: 'default' },
       booking: { label: 'Booking', variant: 'secondary' },
       form_builder: { label: 'Form Builder', variant: 'outline' },
       event_rsvp: { label: 'Event RSVP', variant: 'outline' },
@@ -251,13 +253,14 @@ export default function ToolsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="qr_generator">QR Generator</SelectItem>
+                      <SelectItem value="ai_chat">AI Chat</SelectItem>
+                      <SelectItem value="ai_assistant">AI Assistant</SelectItem>
                       <SelectItem value="booking">Booking</SelectItem>
                       <SelectItem value="form_builder">Form Builder</SelectItem>
                       <SelectItem value="event_rsvp">Event RSVP</SelectItem>
                       <SelectItem value="poll">Poll</SelectItem>
                       <SelectItem value="waitlist">Waitlist</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    </SelectContent>                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Description</Label>
