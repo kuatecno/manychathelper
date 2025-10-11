@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const CreateToolSchema = z.object({
+  adminId: z.string().optional(), // Optional for backward compatibility
   name: z.string().min(1),
   type: z.string().min(1),
   description: z.string().optional(),
@@ -47,8 +48,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = CreateToolSchema.parse(body);
 
+    // If no adminId provided, find or use demo admin
+    let adminId = validated.adminId;
+    if (!adminId) {
+      const demoAdmin = await prisma.admin.findUnique({
+        where: { username: 'demo' },
+      });
+
+      if (!demoAdmin) {
+        return NextResponse.json(
+          { error: 'No admin account found. Please create an admin account first.' },
+          { status: 400 }
+        );
+      }
+
+      adminId = demoAdmin.id;
+    }
+
     const tool = await prisma.tool.create({
-      data: validated,
+      data: {
+        ...validated,
+        adminId,
+      },
     });
 
     return NextResponse.json({
