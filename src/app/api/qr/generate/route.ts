@@ -108,12 +108,20 @@ export async function POST(request: NextRequest) {
       : request.headers.get('origin') || 'http://localhost:3001';
     const qrImageUrl = `${baseUrl}/api/qr/image/${encodeURIComponent(qrCode.code)}`;
 
+    // Generate username-based URL if user has username
+    let usernameUrl: string | undefined;
+    if (user.username) {
+      usernameUrl = `${baseUrl}/u/${user.username}/qr/${qrCode.id}`;
+    }
+
     return NextResponse.json({
       success: true,
       qr_id: qrCode.id,
       code: qrCode.code,
       type: qrCode.type,
       qr_image_url: qrImageUrl, // Public URL for Manychat
+      username: user.username, // Username for display
+      username_url: usernameUrl, // Friendly URL with username
       expires_at: qrCode.expiresAt?.toISOString(),
       created_at: qrCode.createdAt.toISOString(),
     });

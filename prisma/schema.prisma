@@ -14,6 +14,7 @@ datasource db {
 model User {
   id              String    @id @default(cuid())
   manychatId      String    @unique // Manychat subscriber ID
+  username        String?   @unique // Custom username for URLs
   instagramId     String?   @unique
   firstName       String?
   lastName        String?

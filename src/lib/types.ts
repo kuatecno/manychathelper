@@ -32,7 +32,20 @@ export const ToolAvailabilitySchema = z.object({
   date: z.string().datetime(),
 });
 
+// User registration schema
+export const RegisterUserSchema = z.object({
+  manychat_user_id: z.string(),
+  username: z.string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be at most 30 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+  timezone: z.string().optional(),
+});
+
 export type ManychatUser = z.infer<typeof ManychatUserSchema>;
 export type CreateBookingRequest = z.infer<typeof CreateBookingSchema>;
 export type GenerateQRRequest = z.infer<typeof GenerateQRSchema>;
 export type ToolAvailabilityRequest = z.infer<typeof ToolAvailabilitySchema>;
+export type RegisterUserRequest = z.infer<typeof RegisterUserSchema>;
