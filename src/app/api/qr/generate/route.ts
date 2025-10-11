@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { GenerateQRSchema } from '@/lib/types';
-import { generateQRCodeDataURL, generateUniqueCode } from '@/lib/qr';
+import { generateUniqueCode } from '@/lib/qr';
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,15 +42,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generate QR code image as data URL
-    const qrDataURL = await generateQRCodeDataURL(code);
+    // Generate public URL for QR code image
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : request.headers.get('origin') || 'http://localhost:3001';
+    const qrImageUrl = `${baseUrl}/api/qr/image/${encodeURIComponent(qrCode.code)}`;
 
     return NextResponse.json({
       success: true,
       qr_id: qrCode.id,
       code: qrCode.code,
       type: qrCode.type,
-      qr_image: qrDataURL, // Base64 data URL for Manychat
+      qr_image_url: qrImageUrl, // Public URL for Manychat
       expires_at: qrCode.expiresAt?.toISOString(),
       created_at: qrCode.createdAt.toISOString(),
     });

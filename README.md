@@ -115,9 +115,22 @@ Content-Type: application/json
   "qr_id": "cmgi9m3vw0003suqm9xtkv5h4",
   "code": "PROMOTION-cmgi9kvw-1728392345-abc123",
   "type": "promotion",
-  "qr_image": "data:image/png;base64,iVBORw0KG...",
-  "expires_at": "2025-10-15T09:00:00.000Z"
+  "qr_image_url": "https://manychathelper.vercel.app/api/qr/image/PROMOTION-cmgi9kvw-1728392345-abc123",
+  "expires_at": "2025-10-15T09:00:00.000Z",
+  "created_at": "2025-10-08T10:00:00.000Z"
 }
+```
+
+### 5a. Get QR Code Image
+```http
+GET /api/qr/image/{code}
+```
+
+Returns the QR code as a PNG image. This URL can be used directly in Manychat image fields.
+
+**Example:**
+```
+https://manychathelper.vercel.app/api/qr/image/PROMOTION-cmgi9kvw-1728392345-abc123
 ```
 
 ### 5. Validate QR Code
@@ -212,9 +225,15 @@ Content-Type: application/json
 ```
 
 **Response Mapping:**
-- Save `qr_image` → Custom Field: "user_qr_code" (Image URL)
+- Save `qr_image_url` → Custom Field: "user_qr_code" (Image URL)
 - Save `code` → Custom Field: "qr_code_text"
 - Save `expires_at` → Custom Field: "qr_expires"
+
+**Display QR Code in Manychat:**
+Use the `qr_image_url` field directly in Manychat's image element. The URL format:
+```
+https://manychathelper.vercel.app/api/qr/image/{{custom_field.qr_code_text}}
+```
 
 ## Database Schema
 
