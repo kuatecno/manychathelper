@@ -33,11 +33,12 @@ export default function UsersPage() {
     fetch('/api/admin/users')
       .then((res) => res.json())
       .then((data) => {
-        setUsers(data.users);
+        setUsers(data.users || []);
         setLoading(false);
       })
       .catch((err) => {
         console.error('Error fetching users:', err);
+        setUsers([]);
         setLoading(false);
       });
   }, []);

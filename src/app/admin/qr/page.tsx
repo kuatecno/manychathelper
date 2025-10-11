@@ -37,11 +37,12 @@ export default function QRCodesPage() {
     fetch('/api/admin/qr')
       .then((res) => res.json())
       .then((data) => {
-        setQRCodes(data.qrCodes);
+        setQRCodes(data.qrCodes || []);
         setLoading(false);
       })
       .catch((err) => {
         console.error('Error fetching QR codes:', err);
+        setQRCodes([]);
         setLoading(false);
       });
   }, []);

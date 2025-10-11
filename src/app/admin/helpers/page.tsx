@@ -55,9 +55,10 @@ export default function HelpersPage() {
     try {
       const res = await fetch('/api/admin/helpers');
       const data = await res.json();
-      setHelpers(data.helpers);
+      setHelpers(data.helpers || []);
     } catch (error) {
       console.error('Error fetching helpers:', error);
+      setHelpers([]);
     } finally {
       setLoading(false);
     }

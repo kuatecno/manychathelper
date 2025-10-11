@@ -34,11 +34,12 @@ export default function BookingsPage() {
     fetch('/api/admin/bookings')
       .then((res) => res.json())
       .then((data) => {
-        setBookings(data.bookings);
+        setBookings(data.bookings || []);
         setLoading(false);
       })
       .catch((err) => {
         console.error('Error fetching bookings:', err);
+        setBookings([]);
         setLoading(false);
       });
   }, []);
