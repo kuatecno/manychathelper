@@ -21,8 +21,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Generate unique code
-    const code = generateUniqueCode(user.id, validated.type);
+    // Load QR format settings from database
+    let formatSettings = null;
+    try {
+      const formatSetting = await prisma.settings.findUnique({
+        where: { key: 'qr_format' },
+      });
+      if (formatSetting) {
+        formatSettings = JSON.parse(formatSetting.value);
+      }
+    } catch (error) {
+      console.warn('Could not load format settings, using defaults');
+    }
+
+    // Generate unique code with settings
+    const code = generateUniqueCode(user.id, validated.type, formatSettings);
 
     // Calculate expiration
     let expiresAt: Date | null = null;

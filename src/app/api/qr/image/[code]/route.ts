@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateQRCodeBuffer } from '@/lib/qr';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
@@ -8,8 +9,21 @@ export async function GET(
   try {
     const { code } = await params;
 
-    // Generate QR code as PNG buffer
-    const qrBuffer = await generateQRCodeBuffer(code);
+    // Load QR appearance settings from database
+    let appearanceSettings = null;
+    try {
+      const appearanceSetting = await prisma.settings.findUnique({
+        where: { key: 'qr_appearance' },
+      });
+      if (appearanceSetting) {
+        appearanceSettings = JSON.parse(appearanceSetting.value);
+      }
+    } catch (error) {
+      console.warn('Could not load appearance settings, using defaults');
+    }
+
+    // Generate QR code as PNG buffer with settings
+    const qrBuffer = await generateQRCodeBuffer(code, appearanceSettings);
 
     // Return image with proper headers
     return new NextResponse(qrBuffer as unknown as BodyInit, {

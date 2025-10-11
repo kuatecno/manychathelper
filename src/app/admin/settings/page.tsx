@@ -45,31 +45,67 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    // Load current settings from API or localStorage
-    const savedSettings = localStorage.getItem('qrSettings');
-    const savedFormat = localStorage.getItem('qrFormat');
+    // Load current settings from database
+    const loadSettings = async () => {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
 
-    if (savedSettings) {
-      setQRSettings(JSON.parse(savedSettings));
-    }
-    if (savedFormat) {
-      setQRFormat(JSON.parse(savedFormat));
-    }
+        if (data.qr_appearance) {
+          setQRSettings(data.qr_appearance);
+        }
+        if (data.qr_format) {
+          setQRFormat(data.qr_format);
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+
+    loadSettings();
 
     // Get API endpoint
     setApiEndpoint(`${window.location.origin}/api/qr/generate`);
   }, []);
 
-  const handleSaveAppearance = () => {
-    localStorage.setItem('qrSettings', JSON.stringify(qrSettings));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSaveAppearance = async () => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: 'qr_appearance',
+          value: qrSettings,
+        }),
+      });
+
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving appearance settings:', error);
+    }
   };
 
-  const handleSaveFormat = () => {
-    localStorage.setItem('qrFormat', JSON.stringify(qrFormat));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSaveFormat = async () => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: 'qr_format',
+          value: qrFormat,
+        }),
+      });
+
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving format settings:', error);
+    }
   };
 
   const generatePreviewCode = () => {
