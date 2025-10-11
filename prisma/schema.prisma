@@ -10,11 +10,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Admin model - administrators who manage Manychat accounts and create tools
+model Admin {
+  id              String    @id @default(cuid())
+  username        String    @unique // Used in QR URLs (e.g., /qr/username/code)
+  email           String    @unique
+  password        String    // Hashed password
+  name            String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tools           Tool[]
+}
+
 // User model - stores Instagram users who connect via Manychat
 model User {
   id              String    @id @default(cuid())
   manychatId      String    @unique // Manychat subscriber ID
-  username        String?   @unique // Custom username for URLs
   instagramId     String?   @unique
   firstName       String?
   lastName        String?
@@ -37,6 +49,7 @@ model User {
 // }
 model Tool {
   id              String    @id @default(cuid())
+  adminId         String    // Admin who owns this tool
   name            String
   type            String    // "qr_generator", "booking", "form_builder", "event_rsvp", "poll", "waitlist"
   description     String?
@@ -46,9 +59,12 @@ model Tool {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   bookings        Booking[]
   availabilities  Availability[]
   qrCodes         QRCode[]
+
+  @@index([adminId])
 }
 
 // Availability slots for booking tool

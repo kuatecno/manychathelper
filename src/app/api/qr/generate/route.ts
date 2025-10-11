@@ -8,9 +8,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = GenerateQRSchema.parse(body);
 
-    // Load tool configuration
+    // Load tool configuration and admin info
     const tool = await prisma.tool.findUnique({
       where: { id: validated.tool_id },
+      include: { admin: true },
     });
 
     if (!tool) {
@@ -102,26 +103,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generate public URL for QR code image
+    // Generate public URL for QR code image with admin username
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : request.headers.get('origin') || 'http://localhost:3001';
-    const qrImageUrl = `${baseUrl}/api/qr/image/${encodeURIComponent(qrCode.code)}`;
-
-    // Generate username-based URL if user has username
-    let usernameUrl: string | undefined;
-    if (user.username) {
-      usernameUrl = `${baseUrl}/u/${user.username}/qr/${qrCode.id}`;
-    }
+    const qrImageUrl = `${baseUrl}/api/qr/${tool.admin.username}/${encodeURIComponent(qrCode.code)}`;
 
     return NextResponse.json({
       success: true,
       qr_id: qrCode.id,
       code: qrCode.code,
       type: qrCode.type,
-      qr_image_url: qrImageUrl, // Public URL for Manychat
-      username: user.username, // Username for display
-      username_url: usernameUrl, // Friendly URL with username
+      qr_image_url: qrImageUrl, // Public URL for Manychat with username
+      admin_username: tool.admin.username,
       expires_at: qrCode.expiresAt?.toISOString(),
       created_at: qrCode.createdAt.toISOString(),
     });
