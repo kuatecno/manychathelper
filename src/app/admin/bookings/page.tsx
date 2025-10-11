@@ -22,7 +22,7 @@ interface Booking {
   notes: string | null;
   userName: string;
   userEmail: string;
-  helperName: string;
+  toolName: string;
   createdAt: string;
 }
 
@@ -94,7 +94,7 @@ export default function BookingsPage() {
                 <TableRow>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>Helper</TableHead>
+                  <TableHead>Tool</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead>Created</TableHead>
@@ -120,7 +120,7 @@ export default function BookingsPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{booking.helperName}</TableCell>
+                    <TableCell>{booking.toolName}</TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(booking.status)}>
                         {booking.status}

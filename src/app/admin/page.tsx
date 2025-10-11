@@ -15,7 +15,7 @@ interface Stats {
     pending: number;
     confirmed: number;
   };
-  helpers: {
+  tools: {
     total: number;
     active: number;
   };
@@ -33,7 +33,7 @@ interface Stats {
     endTime: string;
     status: string;
     userName: string;
-    helperName: string;
+    toolName: string;
   }>;
   recentQRCodes: Array<{
     id: string;
@@ -92,9 +92,9 @@ export default function AdminDashboard() {
       color: 'text-blue-500',
     },
     {
-      title: 'Active Helpers',
-      value: stats.helpers.active,
-      subtitle: `${stats.helpers.total} total helpers`,
+      title: 'Active Tools',
+      value: stats.tools.active,
+      subtitle: `${stats.tools.total} total tools`,
       icon: Users,
       color: 'text-green-500',
     },
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                     className="flex items-start justify-between border-b pb-3 last:border-0 last:pb-0"
                   >
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">{booking.helperName}</p>
+                      <p className="text-sm font-medium">{booking.toolName}</p>
                       <p className="text-xs text-muted-foreground">
                         {booking.userName}
                       </p>

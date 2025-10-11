@@ -20,14 +20,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Verify helper exists
-    const helper = await prisma.helper.findUnique({
-      where: { id: validated.helper_id },
+    // Verify tool exists
+    const tool = await prisma.tool.findUnique({
+      where: { id: validated.tool_id },
     });
 
-    if (!helper || !helper.active) {
+    if (!tool || !tool.active) {
       return NextResponse.json(
-        { error: 'Helper not found or inactive' },
+        { error: 'Tool not found or inactive' },
         { status: 404 }
       );
     }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Check for conflicts
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
-        helperId: validated.helper_id,
+        toolId: validated.tool_id,
         status: {
           in: ['pending', 'confirmed'],
         },
@@ -70,20 +70,20 @@ export async function POST(request: NextRequest) {
     const booking = await prisma.booking.create({
       data: {
         userId: user.id,
-        helperId: validated.helper_id,
+        toolId: validated.tool_id,
         startTime,
         endTime,
         notes: validated.notes,
       },
       include: {
-        helper: true,
+        tool: true,
       },
     });
 
     return NextResponse.json({
       success: true,
       booking_id: booking.id,
-      helper_name: booking.helper.name,
+      tool_name: booking.tool.name,
       start_time: booking.startTime.toISOString(),
       end_time: booking.endTime.toISOString(),
       status: booking.status,

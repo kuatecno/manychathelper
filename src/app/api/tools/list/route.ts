@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// GET /api/helpers/list - Returns all active helpers
+// GET /api/tools/list - Returns all active tools
 export async function GET(request: NextRequest) {
   try {
-    const helpers = await prisma.helper.findMany({
+    const tools = await prisma.tool.findMany({
       where: {
         active: true,
       },
       select: {
         id: true,
         name: true,
-        email: true,
-        phone: true,
+        type: true,
+        description: true,
       },
       orderBy: {
         name: 'asc',
@@ -20,12 +20,12 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      helpers,
+      tools,
     });
   } catch (error) {
-    console.error('Error listing helpers:', error);
+    console.error('Error listing tools:', error);
     return NextResponse.json(
-      { error: 'Failed to list helpers' },
+      { error: 'Failed to list tools' },
       { status: 500 }
     );
   }

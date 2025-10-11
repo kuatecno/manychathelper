@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         },
       },
       include: {
-        helper: true,
+        tool: true,
       },
       orderBy: {
         startTime: 'asc',
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       bookings: bookings.map(b => ({
         id: b.id,
-        helper_name: b.helper.name,
+        tool_name: b.tool.name,
         start_time: b.startTime.toISOString(),
         end_time: b.endTime.toISOString(),
         status: b.status,

@@ -6,7 +6,7 @@ export async function GET() {
     const bookings = await prisma.booking.findMany({
       include: {
         user: true,
-        helper: true,
+        tool: true,
       },
       orderBy: { startTime: 'desc' },
       take: 100,
@@ -21,7 +21,7 @@ export async function GET() {
         notes: b.notes,
         userName: `${b.user.firstName || ''} ${b.user.lastName || ''}`.trim() || 'Unknown',
         userEmail: b.user.manychatId,
-        helperName: b.helper.name,
+        toolName: b.tool.name,
         createdAt: b.createdAt.toISOString(),
       })),
     });

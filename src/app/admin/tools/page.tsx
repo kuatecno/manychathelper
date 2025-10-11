@@ -16,6 +16,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,42 +30,42 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wrench } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface Helper {
+interface Tool {
   id: string;
   name: string;
-  email: string | null;
-  phone: string | null;
+  type: string;
+  description: string | null;
   active: boolean;
   bookingsCount: number;
   availabilitiesCount: number;
   createdAt: string;
 }
 
-export default function HelpersPage() {
-  const [helpers, setHelpers] = useState<Helper[]>([]);
+export default function ToolsPage() {
+  const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    phone: '',
+    type: 'qr_generator',
+    description: '',
   });
 
   useEffect(() => {
-    fetchHelpers();
+    fetchTools();
   }, []);
 
-  const fetchHelpers = async () => {
+  const fetchTools = async () => {
     try {
-      const res = await fetch('/api/admin/helpers');
+      const res = await fetch('/api/admin/tools');
       const data = await res.json();
-      setHelpers(data.helpers || []);
+      setTools(data.tools || []);
     } catch (error) {
-      console.error('Error fetching helpers:', error);
-      setHelpers([]);
+      console.error('Error fetching tools:', error);
+      setTools([]);
     } finally {
       setLoading(false);
     }
@@ -66,27 +73,27 @@ export default function HelpersPage() {
 
   const toggleActive = async (id: string, currentActive: boolean) => {
     try {
-      await fetch(`/api/admin/helpers/${id}`, {
+      await fetch(`/api/admin/tools/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !currentActive }),
       });
-      fetchHelpers();
+      fetchTools();
     } catch (error) {
-      console.error('Error updating helper:', error);
+      console.error('Error updating tool:', error);
     }
   };
 
-  const deleteHelper = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this helper?')) return;
+  const deleteTool = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this tool?')) return;
 
     try {
-      await fetch(`/api/admin/helpers/${id}`, {
+      await fetch(`/api/admin/tools/${id}`, {
         method: 'DELETE',
       });
-      fetchHelpers();
+      fetchTools();
     } catch (error) {
-      console.error('Error deleting helper:', error);
+      console.error('Error deleting tool:', error);
     }
   };
 
@@ -94,7 +101,7 @@ export default function HelpersPage() {
     e.preventDefault();
 
     try {
-      const res = await fetch('/api/admin/helpers', {
+      const res = await fetch('/api/admin/tools', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -102,12 +109,26 @@ export default function HelpersPage() {
 
       if (res.ok) {
         setDialogOpen(false);
-        setFormData({ name: '', email: '', phone: '' });
-        fetchHelpers();
+        setFormData({ name: '', type: 'qr_generator', description: '' });
+        fetchTools();
       }
     } catch (error) {
-      console.error('Error creating helper:', error);
+      console.error('Error creating tool:', error);
     }
+  };
+
+  const getToolTypeBadge = (type: string) => {
+    const badges: Record<string, { label: string; variant: any }> = {
+      qr_generator: { label: 'QR Generator', variant: 'default' },
+      booking: { label: 'Booking', variant: 'secondary' },
+      form_builder: { label: 'Form Builder', variant: 'outline' },
+      event_rsvp: { label: 'Event RSVP', variant: 'outline' },
+      poll: { label: 'Poll', variant: 'outline' },
+      waitlist: { label: 'Waitlist', variant: 'outline' },
+    };
+
+    const badge = badges[type] || { label: type, variant: 'outline' };
+    return <Badge variant={badge.variant}>{badge.label}</Badge>;
   };
 
   if (loading) {
@@ -122,23 +143,23 @@ export default function HelpersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Helpers</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Tools</h1>
           <p className="text-muted-foreground">
-            Manage your staff members and their availability
+            Manage mini-applications that users can access through Manychat
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add Helper
+              Add Tool
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Helper</DialogTitle>
+              <DialogTitle>Add New Tool</DialogTitle>
               <DialogDescription>
-                Create a new helper to manage bookings and availability.
+                Create a new tool for users to interact with via Manychat.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -155,24 +176,33 @@ export default function HelpersPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
+                  <Label htmlFor="type">Type *</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, type: value })
                     }
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select tool type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="qr_generator">QR Generator</SelectItem>
+                      <SelectItem value="booking">Booking</SelectItem>
+                      <SelectItem value="form_builder">Form Builder</SelectItem>
+                      <SelectItem value="event_rsvp">Event RSVP</SelectItem>
+                      <SelectItem value="poll">Poll</SelectItem>
+                      <SelectItem value="waitlist">Waitlist</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="description">Description</Label>
                   <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
+                    id="description"
+                    value={formData.description}
                     onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
+                      setFormData({ ...formData, description: e.target.value })
                     }
                   />
                 </div>
@@ -185,7 +215,7 @@ export default function HelpersPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Create Helper</Button>
+                <Button type="submit">Create Tool</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -195,22 +225,22 @@ export default function HelpersPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            All Helpers ({helpers.length})
+            <Wrench className="h-5 w-5" />
+            All Tools ({tools.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {helpers.length === 0 ? (
+          {tools.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-muted-foreground">
-              No helpers found. Add your first helper to get started.
+              No tools found. Add your first tool to get started.
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Bookings</TableHead>
                   <TableHead>Availability</TableHead>
@@ -219,29 +249,29 @@ export default function HelpersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {helpers.map((helper) => (
-                  <TableRow key={helper.id}>
-                    <TableCell className="font-medium">{helper.name}</TableCell>
-                    <TableCell>{helper.email || '-'}</TableCell>
-                    <TableCell>{helper.phone || '-'}</TableCell>
+                {tools.map((tool) => (
+                  <TableRow key={tool.id}>
+                    <TableCell className="font-medium">{tool.name}</TableCell>
+                    <TableCell>{getToolTypeBadge(tool.type)}</TableCell>
+                    <TableCell>{tool.description || '-'}</TableCell>
                     <TableCell>
-                      <Badge variant={helper.active ? 'success' : 'secondary'}>
-                        {helper.active ? 'Active' : 'Inactive'}
+                      <Badge variant={tool.active ? 'success' : 'secondary'}>
+                        {tool.active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{helper.bookingsCount}</TableCell>
-                    <TableCell>{helper.availabilitiesCount} slots</TableCell>
+                    <TableCell>{tool.bookingsCount}</TableCell>
+                    <TableCell>{tool.availabilitiesCount} slots</TableCell>
                     <TableCell>
-                      {format(new Date(helper.createdAt), 'MMM d, yyyy')}
+                      {format(new Date(tool.createdAt), 'MMM d, yyyy')}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => toggleActive(helper.id, helper.active)}
+                          onClick={() => toggleActive(tool.id, tool.active)}
                         >
-                          {helper.active ? '⏸' : '▶️'}
+                          {tool.active ? '⏸' : '▶️'}
                         </Button>
                         <Button variant="ghost" size="icon">
                           <Pencil className="h-4 w-4" />
@@ -249,7 +279,7 @@ export default function HelpersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => deleteHelper(helper.id)}
+                          onClick={() => deleteTool(tool.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

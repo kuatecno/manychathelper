@@ -11,7 +11,7 @@ export const ManychatUserSchema = z.object({
 // Booking request schema
 export const CreateBookingSchema = z.object({
   manychat_user_id: z.string(),
-  helper_id: z.string(),
+  tool_id: z.string(),
   start_time: z.string().datetime(),
   duration: z.number().min(15).max(480), // 15 min to 8 hours
   notes: z.string().optional(),
@@ -25,13 +25,13 @@ export const GenerateQRSchema = z.object({
   expires_in_days: z.number().optional(),
 });
 
-// Helper availability schema
-export const HelperAvailabilitySchema = z.object({
-  helper_id: z.string(),
+// Tool availability schema
+export const ToolAvailabilitySchema = z.object({
+  tool_id: z.string(),
   date: z.string().datetime(),
 });
 
 export type ManychatUser = z.infer<typeof ManychatUserSchema>;
 export type CreateBookingRequest = z.infer<typeof CreateBookingSchema>;
 export type GenerateQRRequest = z.infer<typeof GenerateQRSchema>;
-export type HelperAvailabilityRequest = z.infer<typeof HelperAvailabilitySchema>;
+export type ToolAvailabilityRequest = z.infer<typeof ToolAvailabilitySchema>;

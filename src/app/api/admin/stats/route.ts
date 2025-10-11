@@ -27,10 +27,10 @@ export async function GET() {
       prisma.booking.count({ where: { status: 'confirmed' } }),
     ]);
 
-    // Helper stats
-    const [totalHelpers, activeHelpers] = await Promise.all([
-      prisma.helper.count(),
-      prisma.helper.count({ where: { active: true } }),
+    // Tool stats
+    const [totalTools, activeTools] = await Promise.all([
+      prisma.tool.count(),
+      prisma.tool.count({ where: { active: true } }),
     ]);
 
     // QR Code stats
@@ -51,7 +51,7 @@ export async function GET() {
       },
       include: {
         user: true,
-        helper: true,
+        tool: true,
       },
       orderBy: { startTime: 'asc' },
       take: 10,
@@ -75,9 +75,9 @@ export async function GET() {
         pending: pendingBookings,
         confirmed: confirmedBookings,
       },
-      helpers: {
-        total: totalHelpers,
-        active: activeHelpers,
+      tools: {
+        total: totalTools,
+        active: activeTools,
       },
       qrCodes: {
         total: totalQRCodes,
@@ -93,7 +93,7 @@ export async function GET() {
         endTime: b.endTime.toISOString(),
         status: b.status,
         userName: `${b.user.firstName || ''} ${b.user.lastName || ''}`.trim() || 'Unknown',
-        helperName: b.helper.name,
+        toolName: b.tool.name,
       })),
       recentQRCodes: recentQRCodes.map((qr) => ({
         id: qr.id,

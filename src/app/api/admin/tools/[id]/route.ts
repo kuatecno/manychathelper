@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const UpdateHelperSchema = z.object({
+const UpdateToolSchema = z.object({
   name: z.string().min(1).optional(),
-  email: z.string().email().optional().nullable(),
-  phone: z.string().optional().nullable(),
+  type: z.string().min(1).optional(),
+  description: z.string().optional().nullable(),
   active: z.boolean().optional(),
+  config: z.string().optional().nullable(),
+  manychatFlowId: z.string().optional().nullable(),
 });
 
 export async function PUT(
@@ -16,25 +18,25 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const validated = UpdateHelperSchema.parse(body);
+    const validated = UpdateToolSchema.parse(body);
 
-    const helper = await prisma.helper.update({
+    const tool = await prisma.tool.update({
       where: { id },
       data: validated,
     });
 
     return NextResponse.json({
       success: true,
-      helper: {
-        id: helper.id,
-        name: helper.name,
-        email: helper.email,
-        phone: helper.phone,
-        active: helper.active,
+      tool: {
+        id: tool.id,
+        name: tool.name,
+        type: tool.type,
+        description: tool.description,
+        active: tool.active,
       },
     });
   } catch (error) {
-    console.error('Error updating helper:', error);
+    console.error('Error updating tool:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -43,7 +45,7 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({ error: 'Failed to update helper' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to update tool' }, { status: 500 });
   }
 }
 
@@ -54,13 +56,13 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    await prisma.helper.delete({
+    await prisma.tool.delete({
       where: { id },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting helper:', error);
-    return NextResponse.json({ error: 'Failed to delete helper' }, { status: 500 });
+    console.error('Error deleting tool:', error);
+    return NextResponse.json({ error: 'Failed to delete tool' }, { status: 500 });
   }
 }

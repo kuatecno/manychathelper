@@ -5,37 +5,75 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
-  // Create helpers
-  const helper1 = await prisma.helper.create({
+  // Create QR Generator Tool
+  const qrTool = await prisma.tool.create({
     data: {
-      name: 'John Helper',
-      email: 'helper1@example.com',
-      phone: '+1234567890',
+      name: 'QR Code Generator',
+      type: 'qr_generator',
+      description: 'Generate custom QR codes for promotions and validation',
       active: true,
+      config: JSON.stringify({
+        allowedTypes: ['promotion', 'validation', 'discount'],
+        expirationDays: 30,
+      }),
     },
   });
 
-  const helper2 = await prisma.helper.create({
+  // Create Booking Tool
+  const bookingTool = await prisma.tool.create({
     data: {
-      name: 'Jane Helper',
-      email: 'helper2@example.com',
-      phone: '+0987654321',
+      name: 'Appointment Booking',
+      type: 'booking',
+      description: 'Book appointments and manage time slots',
       active: true,
+      config: JSON.stringify({
+        slotDuration: 30,
+        advanceBookingDays: 14,
+        cancellationHours: 24,
+      }),
     },
   });
 
-  console.log('Created helpers:', { helper1, helper2 });
+  // Create Form Builder Tool
+  const formTool = await prisma.tool.create({
+    data: {
+      name: 'Form Builder',
+      type: 'form_builder',
+      description: 'Create custom forms for data collection',
+      active: true,
+      config: JSON.stringify({
+        maxFields: 10,
+        allowFileUploads: false,
+      }),
+    },
+  });
 
-  // Create availability for helper1 (Monday to Friday, 9 AM - 5 PM)
+  // Create Event RSVP Tool
+  const eventTool = await prisma.tool.create({
+    data: {
+      name: 'Event RSVP',
+      type: 'event_rsvp',
+      description: 'Manage event registrations and RSVPs',
+      active: false, // Start inactive
+      config: JSON.stringify({
+        maxAttendees: 100,
+        requireConfirmation: true,
+      }),
+    },
+  });
+
+  console.log('Created tools:', { qrTool, bookingTool, formTool, eventTool });
+
+  // Create availability for booking tool (Monday to Friday, 9 AM - 5 PM)
   for (let day = 1; day <= 5; day++) {
     await prisma.availability.upsert({
       where: {
-        id: `${helper1.id}-${day}`,
+        id: `${bookingTool.id}-${day}`,
       },
       update: {},
       create: {
-        id: `${helper1.id}-${day}`,
-        helperId: helper1.id,
+        id: `${bookingTool.id}-${day}`,
+        toolId: bookingTool.id,
         dayOfWeek: day,
         startTime: '09:00',
         endTime: '17:00',
@@ -45,26 +83,7 @@ async function main() {
     });
   }
 
-  // Create availability for helper2 (Monday to Friday, 10 AM - 6 PM)
-  for (let day = 1; day <= 5; day++) {
-    await prisma.availability.upsert({
-      where: {
-        id: `${helper2.id}-${day}`,
-      },
-      update: {},
-      create: {
-        id: `${helper2.id}-${day}`,
-        helperId: helper2.id,
-        dayOfWeek: day,
-        startTime: '10:00',
-        endTime: '18:00',
-        slotDuration: 60,
-        active: true,
-      },
-    });
-  }
-
-  console.log('Created availability slots');
+  console.log('Created availability slots for booking tool');
   console.log('Seeding completed!');
 }
 

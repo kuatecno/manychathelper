@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
-  Users,
+  Wrench,
   Calendar,
   QrCode,
   UserCircle,
@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Helpers', href: '/admin/helpers', icon: Users },
+  { name: 'Tools', href: '/admin/tools', icon: Wrench },
   { name: 'Bookings', href: '/admin/bookings', icon: Calendar },
   { name: 'QR Codes', href: '/admin/qr', icon: QrCode },
   { name: 'Users', href: '/admin/users', icon: UserCircle },

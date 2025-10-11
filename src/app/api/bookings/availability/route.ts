@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { HelperAvailabilitySchema } from '@/lib/types';
+import { ToolAvailabilitySchema } from '@/lib/types';
 
-// GET /api/bookings/availability?helper_id=xxx&date=2025-10-08T00:00:00Z
+// GET /api/bookings/availability?tool_id=xxx&date=2025-10-08T00:00:00Z
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const helperId = searchParams.get('helper_id');
+    const toolId = searchParams.get('tool_id');
     const dateStr = searchParams.get('date');
 
-    if (!helperId || !dateStr) {
+    if (!toolId || !dateStr) {
       return NextResponse.json(
-        { error: 'helper_id and date are required' },
+        { error: 'tool_id and date are required' },
         { status: 400 }
       );
     }
@@ -19,10 +19,10 @@ export async function GET(request: NextRequest) {
     const date = new Date(dateStr);
     const dayOfWeek = date.getDay();
 
-    // Get helper's availability for this day
+    // Get tool's availability for this day
     const availabilities = await prisma.availability.findMany({
       where: {
-        helperId,
+        toolId,
         dayOfWeek,
         active: true,
       },
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     const existingBookings = await prisma.booking.findMany({
       where: {
-        helperId,
+        toolId,
         startTime: {
           gte: startOfDay,
           lte: endOfDay,
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      helper_id: helperId,
+      tool_id: toolId,
       date: dateStr,
       available_slots: slots,
     });
