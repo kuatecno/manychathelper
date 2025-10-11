@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "postbuild": "prisma db seed",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
