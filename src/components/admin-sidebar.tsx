@@ -17,11 +17,11 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Tools', href: '/admin/tools', icon: Wrench },
-  { name: 'Bookings', href: '/admin/bookings', icon: Calendar },
-  { name: 'QR Codes', href: '/admin/qr', icon: QrCode },
-  { name: 'Users', href: '/admin/users', icon: UserCircle },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Tools', href: '/tools', icon: Wrench },
+  { name: 'Bookings', href: '/bookings', icon: Calendar },
+  { name: 'QR Codes', href: '/qr', icon: QrCode },
+  { name: 'Users', href: '/users', icon: UserCircle },
 ];
 
 export function AdminSidebar() {
@@ -32,7 +32,7 @@ export function AdminSidebar() {
     <div className="flex h-full w-64 flex-col border-r bg-card">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/admin" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <QrCode className="h-5 w-5" />
           </div>
