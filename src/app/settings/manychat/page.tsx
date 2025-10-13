@@ -417,14 +417,28 @@ export default function ManychatSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Webhook URL</CardTitle>
+          <CardTitle>Webhook Configuration</CardTitle>
           <CardDescription>
-            Use this URL in your Manychat webhook configuration for real-time updates
+            Set up Manychat automations to sync contacts automatically
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-lg bg-muted p-3 font-mono text-sm break-all">
-            {webhookUrl || 'Loading...'}
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm text-muted-foreground mb-3">
+              To automatically import contacts when they interact with your Manychat bot, you need to configure an automation with an External Request.
+            </p>
+            <Button
+              onClick={() => router.push('/settings/manychat/webhook-helper')}
+              variant="default"
+            >
+              View Setup Instructions
+            </Button>
+          </div>
+          <div className="border-t pt-4">
+            <p className="text-sm font-medium mb-2">Webhook URL Reference:</p>
+            <div className="rounded-lg bg-muted p-3 font-mono text-sm break-all">
+              {webhookUrl || 'Loading...'}
+            </div>
           </div>
         </CardContent>
       </Card>
