@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSyncService } from '@/lib/manychat-sync';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const SyncContactSchema = z.object({
@@ -7,53 +7,48 @@ const SyncContactSchema = z.object({
   subscriber_id: z.number(),
 });
 
+/**
+ * Webhook endpoint - stores subscriber ID only for later full sync
+ * This is fast and doesn't hit Manychat API limits
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const validated = SyncContactSchema.parse(body);
 
-    // Create sync service
-    const syncService = await createSyncService(validated.admin_id);
+    // Check if config exists
+    const config = await prisma.manychatConfig.findUnique({
+      where: { adminId: validated.admin_id },
+    });
 
-    if (!syncService) {
+    if (!config || !config.active) {
       return NextResponse.json(
         { error: 'Manychat configuration not found or inactive' },
         { status: 404 }
       );
     }
 
-    // Create sync log
-    const logId = await syncService.createSyncLog('webhook', 'in_progress');
+    // Store or update user with just the subscriber ID
+    // Full sync will happen on refresh or daily sync
+    const user = await prisma.user.upsert({
+      where: { manychatId: String(validated.subscriber_id) },
+      create: {
+        manychatId: String(validated.subscriber_id),
+        firstName: null,
+        lastName: null,
+        // Mark as pending sync
+        lastSyncedAt: null,
+      },
+      update: {
+        // Don't overwrite existing data, just ensure user exists
+      },
+    });
 
-    try {
-      // Sync subscriber
-      const result = await syncService.syncSubscriber(validated.subscriber_id);
-
-      // Update sync log
-      await syncService.updateSyncLog(
-        logId,
-        result.success ? 'completed' : 'failed',
-        result
-      );
-
-      return NextResponse.json({
-        success: result.success,
-        contact_id: result.userId,
-        synced: result.recordsSynced,
-        failed: result.recordsFailed,
-        errors: result.errors,
-        log_id: logId,
-      });
-    } catch (error) {
-      // Update log as failed
-      await syncService.updateSyncLog(logId, 'failed', {
-        success: false,
-        recordsSynced: 0,
-        recordsFailed: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error'],
-      });
-      throw error;
-    }
+    return NextResponse.json({
+      success: true,
+      contact_id: user.id,
+      message: 'Contact queued for sync',
+    });
   } catch (error) {
     console.error('Sync contact error:', error);
 

@@ -39,6 +39,7 @@ model User {
   gender          String?
   locale          String?
   timezone        String?
+  profilePic      String?
   optedInMessenger Boolean  @default(false)
   optedInInstagram Boolean  @default(false)
   optedInWhatsapp  Boolean  @default(false)
