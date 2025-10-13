@@ -15,6 +15,8 @@ export default function ManychatSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [syncingTags, setSyncingTags] = useState(false);
+  const [syncingFields, setSyncingFields] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -25,6 +27,7 @@ export default function ManychatSettingsPage() {
     webhookSecret: '',
   });
   const [testResult, setTestResult] = useState<any>(null);
+  const [syncResult, setSyncResult] = useState<any>(null);
 
   useEffect(() => {
     // Set webhook URL client-side only to avoid hydration error
@@ -146,6 +149,66 @@ export default function ManychatSettingsPage() {
       setError(errorMsg);
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleSyncTags = async () => {
+    setSyncingTags(true);
+    setError('');
+    setSyncResult(null);
+
+    try {
+      const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+      const res = await fetch('/api/manychat/sync/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: admin.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to sync tags');
+        return;
+      }
+
+      setSyncResult({ type: 'tags', ...data });
+      setSuccess(`Synced ${data.synced} tags successfully!`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('An error occurred while syncing tags');
+    } finally {
+      setSyncingTags(false);
+    }
+  };
+
+  const handleSyncFields = async () => {
+    setSyncingFields(true);
+    setError('');
+    setSyncResult(null);
+
+    try {
+      const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+      const res = await fetch('/api/manychat/sync/fields', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_id: admin.id }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to sync custom fields');
+        return;
+      }
+
+      setSyncResult({ type: 'fields', ...data });
+      setSuccess(`Synced ${data.synced} custom fields successfully!`);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError('An error occurred while syncing custom fields');
+    } finally {
+      setSyncingFields(false);
     }
   };
 
@@ -278,6 +341,75 @@ export default function ManychatSettingsPage() {
                   </p>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {config.apiToken && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sync Data</CardTitle>
+            <CardDescription>
+              Sync tags and custom fields from your Manychat account
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <h3 className="font-medium">Tags</h3>
+                <p className="text-sm text-muted-foreground">
+                  Sync all tags from Manychat to use for contact segmentation
+                </p>
+                <Button
+                  onClick={handleSyncTags}
+                  disabled={syncingTags}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  {syncingTags && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Sync Tags
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-medium">Custom Fields</h3>
+                <p className="text-sm text-muted-foreground">
+                  Sync custom field definitions to store contact data
+                </p>
+                <Button
+                  onClick={handleSyncFields}
+                  disabled={syncingFields}
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                >
+                  {syncingFields && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Sync Custom Fields
+                </Button>
+              </div>
+            </div>
+
+            {syncResult && (
+              <div className="rounded-lg bg-muted p-3 space-y-1">
+                <p className="text-sm font-medium">Sync Complete</p>
+                <p className="text-sm">
+                  <span className="font-medium">Synced:</span> {syncResult.synced}
+                </p>
+                {syncResult.failed > 0 && (
+                  <p className="text-sm text-destructive">
+                    <span className="font-medium">Failed:</span> {syncResult.failed}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="border-t pt-4">
+              <p className="text-sm text-muted-foreground mb-2">
+                <strong>Note:</strong> Contacts are synced automatically when they interact with your Manychat flows.
+                To manually sync a specific contact, you can use the API endpoint with their Manychat subscriber ID.
+              </p>
             </div>
           </CardContent>
         </Card>
