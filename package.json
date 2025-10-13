@@ -4,13 +4,14 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --force-reset --accept-data-loss --skip-generate && next build",
-    "postbuild": "prisma db seed",
+    "build": "prisma generate && prisma db push --skip-generate && next build",
+    "postbuild": "echo 'Skipping seed in production'",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:reset": "prisma db push --force-reset --accept-data-loss && tsx prisma/seed.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
