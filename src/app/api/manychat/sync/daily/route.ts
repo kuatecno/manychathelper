@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
 
         const contacts = await prisma.user.findMany({
           where: {
-            manychatId: { not: null },
+            NOT: {
+              manychatId: null,
+            },
             OR: [
               { lastSyncedAt: null },
               { lastSyncedAt: { lt: dayAgo } },
