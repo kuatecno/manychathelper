@@ -11,6 +11,7 @@ export interface SyncResult {
   recordsSynced: number;
   recordsFailed: number;
   errors: string[];
+  userId?: string;
 }
 
 export class ManychatSyncService {
@@ -137,9 +138,10 @@ export class ManychatSyncService {
       const response = await this.client.getSubscriberInfo(subscriberId);
       const subscriber = response.data;
 
-      await this.upsertSubscriber(subscriber);
+      const userId = await this.upsertSubscriber(subscriber);
       result.recordsSynced++;
       result.success = true;
+      result.userId = userId;
     } catch (error) {
       result.recordsFailed++;
       result.errors.push(`Failed to sync subscriber ${subscriberId}: ${error}`);
@@ -151,7 +153,7 @@ export class ManychatSyncService {
   /**
    * Upsert subscriber data to database
    */
-  private async upsertSubscriber(subscriber: ManychatSubscriber): Promise<void> {
+  private async upsertSubscriber(subscriber: ManychatSubscriber): Promise<string> {
     // Upsert user
     const user = await prisma.user.upsert({
       where: { manychatId: String(subscriber.id) },
@@ -258,6 +260,8 @@ export class ManychatSyncService {
         }
       }
     }
+
+    return user.id;
   }
 
   /**
