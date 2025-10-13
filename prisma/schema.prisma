@@ -21,6 +21,9 @@ model Admin {
   updatedAt       DateTime  @updatedAt
 
   tools           Tool[]
+  manychatConfig  ManychatConfig?
+  tags            Tag[]
+  customFields    CustomField[]
 }
 
 // User model - stores Instagram users who connect via Manychat
@@ -30,13 +33,27 @@ model User {
   instagramId     String?   @unique
   firstName       String?
   lastName        String?
+  email           String?
+  phone           String?
+  whatsappPhone   String?
+  gender          String?
+  locale          String?
   timezone        String?
+  optedInMessenger Boolean  @default(false)
+  optedInInstagram Boolean  @default(false)
+  optedInWhatsapp  Boolean  @default(false)
+  optedInTelegram  Boolean  @default(false)
+  subscribedAt    DateTime?
+  lastTextInput   String?
+  lastSyncedAt    DateTime? // Track when data was last synced from Manychat
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   bookings        Booking[]
   qrCodes         QRCode[]
   conversations   Conversation[]
+  customFieldValues CustomFieldValue[]
+  contactTags     ContactTag[]
 }
 
 // Tool model - mini-applications users can access (QR generator, booking tool, forms, AI chat, etc.)
@@ -170,5 +187,109 @@ model AIMessage {
 
   @@index([conversationId])
   @@index([createdAt])
+}
+
+// ManychatConfig - stores Manychat API credentials per admin
+model ManychatConfig {
+  id              String    @id @default(cuid())
+  adminId         String    @unique
+  apiToken        String    // Encrypted API token
+  pageId          String?   // Manychat page ID
+  active          Boolean   @default(true)
+  lastSyncedAt    DateTime?
+  syncEnabled     Boolean   @default(true)
+  webhookSecret   String?   // For validating webhook calls
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  syncLogs        SyncLog[]
+
+  @@index([adminId])
+}
+
+// Tag - stores Manychat tags for contact segmentation
+model Tag {
+  id              String    @id @default(cuid())
+  adminId         String
+  manychatTagId   String    // Manychat's tag ID
+  name            String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  contactTags     ContactTag[]
+
+  @@unique([adminId, manychatTagId])
+  @@index([adminId])
+}
+
+// ContactTag - junction table for user-tag relationships
+model ContactTag {
+  id              String    @id @default(cuid())
+  userId          String
+  tagId           String
+  appliedAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tag             Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tagId])
+  @@index([userId])
+  @@index([tagId])
+}
+
+// CustomField - stores custom field definitions from Manychat
+model CustomField {
+  id              String    @id @default(cuid())
+  adminId         String
+  manychatFieldId String    // Manychat's field ID
+  name            String
+  type            String    // "text", "number", "date", "datetime", "boolean", "array"
+  description     String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  fieldValues     CustomFieldValue[]
+
+  @@unique([adminId, manychatFieldId])
+  @@index([adminId])
+}
+
+// CustomFieldValue - stores custom field values per user
+model CustomFieldValue {
+  id              String    @id @default(cuid())
+  userId          String
+  fieldId         String
+  value           String?   @db.Text // Store all types as text, parse based on field.type
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  field           CustomField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fieldId])
+  @@index([userId])
+  @@index([fieldId])
+}
+
+// SyncLog - tracks sync operations and errors
+model SyncLog {
+  id              String    @id @default(cuid())
+  configId        String
+  syncType        String    // "full", "incremental", "webhook", "manual"
+  status          String    // "pending", "in_progress", "completed", "failed"
+  recordsSynced   Int       @default(0)
+  recordsFailed   Int       @default(0)
+  errorMessage    String?   @db.Text
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  metadata        String?   // JSON for additional context
+
+  config          ManychatConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+  @@index([startedAt])
+  @@index([status])
 }
 
