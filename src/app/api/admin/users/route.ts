@@ -11,6 +11,15 @@ export async function GET() {
             qrCodes: true,
           },
         },
+        contactTags: {
+          include: {
+            tag: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -22,9 +31,18 @@ export async function GET() {
         instagramId: u.instagramId,
         firstName: u.firstName,
         lastName: u.lastName,
+        email: u.email,
+        phone: u.phone,
+        whatsappPhone: u.whatsappPhone,
+        optedInMessenger: u.optedInMessenger,
+        optedInInstagram: u.optedInInstagram,
+        optedInWhatsapp: u.optedInWhatsapp,
+        optedInTelegram: u.optedInTelegram,
+        lastSyncedAt: u.lastSyncedAt?.toISOString() || null,
         timezone: u.timezone,
         bookingsCount: u._count.bookings,
         qrCodesCount: u._count.qrCodes,
+        tags: u.contactTags.map((ct) => ({ name: ct.tag.name })),
         createdAt: u.createdAt.toISOString(),
       })),
     });

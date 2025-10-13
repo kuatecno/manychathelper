@@ -22,7 +22,8 @@ const navigation = [
   { name: 'Tools', href: '/tools', icon: Wrench },
   { name: 'Bookings', href: '/bookings', icon: Calendar },
   { name: 'QR Codes', href: '/qr', icon: QrCode },
-  { name: 'Users', href: '/users', icon: UserCircle },
+  { name: 'Contacts', href: '/users', icon: UserCircle },
+  { name: 'Settings', href: '/settings/manychat', icon: Settings },
 ];
 
 export function AdminSidebar() {
