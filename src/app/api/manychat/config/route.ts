@@ -65,7 +65,10 @@ export async function POST(request: NextRequest) {
 
     if (!admin) {
       return NextResponse.json(
-        { error: 'Admin not found' },
+        {
+          error: 'Admin account not found. Please log out and log in again.',
+          details: 'Your session may be outdated or the admin account was deleted.',
+        },
         { status: 404 }
       );
     }

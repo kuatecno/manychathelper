@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +11,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function ManychatSettingsPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [config, setConfig] = useState({
     apiToken: '',
     pageId: '',
@@ -24,6 +27,30 @@ export default function ManychatSettingsPage() {
   const [testResult, setTestResult] = useState<any>(null);
 
   useEffect(() => {
+    // Set webhook URL client-side only to avoid hydration error
+    setWebhookUrl(`${window.location.origin}/api/manychat/webhook`);
+
+    // Validate admin
+    const adminStr = localStorage.getItem('admin');
+    if (!adminStr) {
+      setError('Please log in to access settings');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const admin = JSON.parse(adminStr);
+      if (!admin.id) {
+        setError('Invalid admin session. Please log in again');
+        router.push('/login');
+        return;
+      }
+    } catch (err) {
+      setError('Invalid admin session. Please log in again');
+      router.push('/login');
+      return;
+    }
+
     loadConfig();
   }, []);
 
@@ -70,7 +97,11 @@ export default function ManychatSettingsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Failed to save configuration');
+        const errorMsg = data.details ? `${data.error} ${data.details}` : data.error || 'Failed to save configuration';
+        setError(errorMsg);
+        if (res.status === 404) {
+          setTimeout(() => router.push('/login'), 3000);
+        }
         return;
       }
 
@@ -102,13 +133,17 @@ export default function ManychatSettingsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Connection test failed');
+        const errorMsg = data.details ? `${data.error}\n${data.details}` : data.error || 'Connection test failed';
+        setError(errorMsg);
         return;
       }
 
       setTestResult(data);
+      setSuccess('Connection test successful!');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('An error occurred during connection test');
+      const errorMsg = err instanceof Error ? err.message : 'An error occurred during connection test';
+      setError(errorMsg);
     } finally {
       setTesting(false);
     }
@@ -257,7 +292,7 @@ export default function ManychatSettingsPage() {
         </CardHeader>
         <CardContent>
           <div className="rounded-lg bg-muted p-3 font-mono text-sm break-all">
-            {typeof window !== 'undefined' && `${window.location.origin}/api/manychat/webhook`}
+            {webhookUrl || 'Loading...'}
           </div>
         </CardContent>
       </Card>

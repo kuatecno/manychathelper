@@ -61,7 +61,7 @@ export class ManychatClient {
     method: 'GET' | 'POST' = 'POST',
     body?: any
   ): Promise<T> {
-    const url = `${MANYCHAT_API_BASE}${endpoint}`;
+    let url = `${MANYCHAT_API_BASE}${endpoint}`;
 
     const options: RequestInit = {
       method,
@@ -71,8 +71,18 @@ export class ManychatClient {
       },
     };
 
-    if (body && method === 'POST') {
-      options.body = JSON.stringify(body);
+    if (body) {
+      if (method === 'GET') {
+        // For GET requests, add params as query string
+        const params = new URLSearchParams();
+        Object.keys(body).forEach(key => {
+          params.append(key, String(body[key]));
+        });
+        url = `${url}?${params.toString()}`;
+      } else {
+        // For POST requests, add as body
+        options.body = JSON.stringify(body);
+      }
     }
 
     const response = await fetch(url, options);
@@ -89,14 +99,14 @@ export class ManychatClient {
    * Get page information
    */
   async getPageInfo(): Promise<{ data: ManychatPageInfo }> {
-    return this.request('/fb/page/getInfo', 'POST');
+    return this.request('/fb/page/getInfo', 'GET');
   }
 
   /**
    * Get subscriber information by ID
    */
   async getSubscriberInfo(subscriberId: number): Promise<{ data: ManychatSubscriber }> {
-    return this.request('/fb/subscriber/getInfo', 'POST', {
+    return this.request('/fb/subscriber/getInfo', 'GET', {
       subscriber_id: subscriberId,
     });
   }
@@ -108,7 +118,7 @@ export class ManychatClient {
     fieldId: number,
     fieldValue: string
   ): Promise<{ data: ManychatSubscriber[] }> {
-    return this.request('/fb/subscriber/findByCustomField', 'POST', {
+    return this.request('/fb/subscriber/findByCustomField', 'GET', {
       field_id: fieldId,
       field_value: fieldValue,
     });
@@ -118,7 +128,7 @@ export class ManychatClient {
    * Find subscriber by name
    */
   async findSubscriberByName(name: string): Promise<{ data: ManychatSubscriber[] }> {
-    return this.request('/fb/subscriber/findByName', 'POST', {
+    return this.request('/fb/subscriber/findByName', 'GET', {
       name,
     });
   }
@@ -127,14 +137,14 @@ export class ManychatClient {
    * Get all tags
    */
   async getTags(): Promise<{ data: ManychatTag[] }> {
-    return this.request('/fb/page/getTags', 'POST');
+    return this.request('/fb/page/getTags', 'GET');
   }
 
   /**
    * Get all custom fields
    */
   async getCustomFields(): Promise<{ data: ManychatCustomField[] }> {
-    return this.request('/fb/page/getCustomFields', 'POST');
+    return this.request('/fb/page/getCustomFields', 'GET');
   }
 
   /**
