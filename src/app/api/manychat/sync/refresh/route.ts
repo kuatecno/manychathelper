@@ -38,9 +38,6 @@ export async function POST(request: NextRequest) {
     // Refresh all contacts
     if (validated.refresh_all) {
       const contacts = await prisma.user.findMany({
-        where: {
-          manychatId: { not: null },
-        },
         select: {
           id: true,
           manychatId: true,
@@ -48,7 +45,6 @@ export async function POST(request: NextRequest) {
       });
 
       for (const contact of contacts) {
-        if (!contact.manychatId) continue;
 
         try {
           const result = await syncService.syncSubscriber(Number(contact.manychatId));
