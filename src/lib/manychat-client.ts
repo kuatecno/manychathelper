@@ -7,9 +7,9 @@
 const MANYCHAT_API_BASE = 'https://api.manychat.com';
 
 export interface ManychatSubscriber {
-  id: number;
-  key: string;
-  page_id: number;
+  id: string | number;
+  key?: string;
+  page_id?: string | number;
   status: string;
   first_name?: string;
   last_name?: string;
@@ -18,16 +18,28 @@ export interface ManychatSubscriber {
   profile_pic?: string;
   locale?: string;
   language?: string;
-  timezone?: number;
+  timezone?: string | number;
   phone?: string;
   email?: string;
   whatsapp_phone?: string;
+  optin_phone?: boolean;
+  optin_email?: boolean;
+  optin_whatsapp?: boolean;
   opted_in_messenger?: boolean;
   opted_in_instagram?: boolean;
   opted_in_whatsapp?: boolean;
   opted_in_telegram?: boolean;
   subscribed?: string; // ISO date
   last_input_text?: string;
+  last_interaction?: string;
+  ig_last_interaction?: string;
+  last_seen?: string;
+  ig_last_seen?: string;
+  is_followup_enabled?: boolean;
+  ig_username?: string;
+  ig_id?: number;
+  live_chat_url?: string;
+  user_refs?: any[];
   custom_fields?: ManychatCustomField[];
   tags?: ManychatTag[];
 }
