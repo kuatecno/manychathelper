@@ -53,7 +53,26 @@
   * {
     @apply border-border;
   }
+
+  html {
+    /* Responsive base font size: 14px on mobile, scales to 16px on desktop */
+    font-size: clamp(14px, 1.5vw + 0.5rem, 16px);
+  }
+
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Ensure headings scale proportionally on mobile */
+  @media (max-width: 640px) {
+    h1 {
+      @apply text-2xl;
+    }
+    h2 {
+      @apply text-xl;
+    }
+    h3 {
+      @apply text-lg;
+    }
   }
 }
