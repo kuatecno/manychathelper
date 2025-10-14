@@ -302,7 +302,17 @@ export default function UsersPage() {
                         )}
                         <div>
                           <div className="font-medium">
-                            {`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unknown'}
+                            {(() => {
+                              const firstName = user.firstName || '';
+                              const lastName = user.lastName || '';
+                              const fullName = `${firstName} ${lastName}`.trim();
+
+                              // Show username if no name or both first and last names are 2 chars or shorter
+                              if (!fullName || (firstName.length <= 2 && lastName.length <= 2)) {
+                                return user.instagramId || 'Unknown';
+                              }
+                              return fullName;
+                            })()}
                           </div>
                           <div className="text-xs text-muted-foreground font-mono">
                             {user.manychatId}
