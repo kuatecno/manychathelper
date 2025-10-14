@@ -318,7 +318,17 @@ export default function UsersPage() {
                         {user.phone && (
                           <div className="text-xs font-mono">{user.phone}</div>
                         )}
-                        {!user.email && !user.phone && (
+                        {user.instagramId && (
+                          <div className="text-xs text-muted-foreground">
+                            IG: {user.instagramId}
+                          </div>
+                        )}
+                        {user.timezone && (
+                          <div className="text-xs text-muted-foreground">
+                            🌍 {user.timezone}
+                          </div>
+                        )}
+                        {!user.email && !user.phone && !user.instagramId && !user.timezone && (
                           <span className="text-muted-foreground">No contact info</span>
                         )}
                       </div>
