@@ -29,6 +29,7 @@ export async function GET() {
         id: u.id,
         manychatId: u.manychatId,
         instagramId: u.instagramId,
+        igUsername: u.igUsername,
         firstName: u.firstName,
         lastName: u.lastName,
         email: u.email,

@@ -32,6 +32,7 @@ interface User {
   id: string;
   manychatId: string;
   instagramId: string | null;
+  igUsername: string | null;
   firstName: string | null;
   lastName: string | null;
   email: string | null;
@@ -309,13 +310,13 @@ export default function UsersPage() {
 
                               // Show username if no name or both first and last names are 2 chars or shorter
                               if (!fullName || (firstName.length <= 2 && lastName.length <= 2)) {
-                                return user.instagramId || 'Unknown';
+                                return user.igUsername ? `@${user.igUsername}` : (user.instagramId || 'Unknown');
                               }
                               return fullName;
                             })()}
                           </div>
-                          <div className="text-xs text-muted-foreground font-mono">
-                            {user.manychatId}
+                          <div className="text-xs text-muted-foreground">
+                            {user.igUsername ? `@${user.igUsername}` : user.manychatId}
                           </div>
                         </div>
                       </div>
@@ -328,9 +329,9 @@ export default function UsersPage() {
                         {user.phone && (
                           <div className="text-xs font-mono">{user.phone}</div>
                         )}
-                        {user.instagramId && (
+                        {user.igUsername && (
                           <div className="text-xs text-muted-foreground">
-                            IG: {user.instagramId}
+                            📷 @{user.igUsername}
                           </div>
                         )}
                         {user.timezone && (
@@ -338,7 +339,7 @@ export default function UsersPage() {
                             🌍 {user.timezone}
                           </div>
                         )}
-                        {!user.email && !user.phone && !user.instagramId && !user.timezone && (
+                        {!user.email && !user.phone && !user.igUsername && !user.timezone && (
                           <span className="text-muted-foreground">No contact info</span>
                         )}
                       </div>

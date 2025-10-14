@@ -162,6 +162,7 @@ export class ManychatSyncService {
       create: {
         manychatId: String(subscriber.id),
         instagramId: subscriber.ig_id ? String(subscriber.ig_id) : null,
+        igUsername: subscriber.ig_username || null,
         firstName: subscriber.first_name || null,
         lastName: subscriber.last_name || null,
         email: subscriber.email || null,
@@ -181,6 +182,7 @@ export class ManychatSyncService {
       },
       update: {
         instagramId: subscriber.ig_id ? String(subscriber.ig_id) : null,
+        igUsername: subscriber.ig_username || null,
         firstName: subscriber.first_name || null,
         lastName: subscriber.last_name || null,
         email: subscriber.email || null,

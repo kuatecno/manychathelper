@@ -31,6 +31,7 @@ model User {
   id              String    @id @default(cuid())
   manychatId      String    @unique // Manychat subscriber ID
   instagramId     String?   @unique
+  igUsername      String?   // Instagram username (e.g., @username)
   firstName       String?
   lastName        String?
   email           String?
