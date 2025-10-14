@@ -156,6 +156,9 @@ export class ManychatSyncService {
    * Upsert subscriber data to database
    */
   private async upsertSubscriber(subscriber: ManychatSubscriber): Promise<string> {
+    // Infer Instagram opt-in from presence of ig_id or ig_username
+    const hasInstagram = !!(subscriber.ig_id || subscriber.ig_username);
+
     // Upsert user
     const user = await prisma.user.upsert({
       where: { manychatId: String(subscriber.id) },
@@ -173,7 +176,7 @@ export class ManychatSyncService {
         timezone: subscriber.timezone ? String(subscriber.timezone) : null,
         profilePic: subscriber.profile_pic || null,
         optedInMessenger: subscriber.opted_in_messenger || false,
-        optedInInstagram: subscriber.opted_in_instagram || false,
+        optedInInstagram: subscriber.opted_in_instagram || hasInstagram,
         optedInWhatsapp: subscriber.optin_whatsapp || subscriber.opted_in_whatsapp || false,
         optedInTelegram: subscriber.opted_in_telegram || false,
         subscribedAt: subscriber.subscribed ? new Date(subscriber.subscribed) : null,
@@ -193,7 +196,7 @@ export class ManychatSyncService {
         timezone: subscriber.timezone ? String(subscriber.timezone) : null,
         profilePic: subscriber.profile_pic || null,
         optedInMessenger: subscriber.opted_in_messenger || false,
-        optedInInstagram: subscriber.opted_in_instagram || false,
+        optedInInstagram: subscriber.opted_in_instagram || hasInstagram,
         optedInWhatsapp: subscriber.optin_whatsapp || subscriber.opted_in_whatsapp || false,
         optedInTelegram: subscriber.opted_in_telegram || false,
         subscribedAt: subscriber.subscribed ? new Date(subscriber.subscribed) : null,
@@ -212,23 +215,30 @@ export class ManychatSyncService {
       // Then add current tags
       for (const tag of subscriber.tags) {
         // Find or create tag
-        const dbTag = await prisma.tag.findUnique({
+        const dbTag = await prisma.tag.upsert({
           where: {
             adminId_manychatTagId: {
               adminId: this.adminId,
               manychatTagId: String(tag.id),
             },
           },
+          create: {
+            adminId: this.adminId,
+            manychatTagId: String(tag.id),
+            name: tag.name,
+          },
+          update: {
+            name: tag.name,
+          },
         });
 
-        if (dbTag) {
-          await prisma.contactTag.create({
-            data: {
-              userId: user.id,
-              tagId: dbTag.id,
-            },
-          });
-        }
+        // Create contact tag association
+        await prisma.contactTag.create({
+          data: {
+            userId: user.id,
+            tagId: dbTag.id,
+          },
+        });
       }
     }
 
