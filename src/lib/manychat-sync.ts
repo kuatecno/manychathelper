@@ -242,7 +242,11 @@ export class ManychatSyncService {
       }
     }
 
-    // Sync custom fields
+    // Sync custom fields and track interaction counts
+    let messagesCount = 0;
+    let commentsCount = 0;
+    let storiesCount = 0;
+
     if (subscriber.custom_fields && subscriber.custom_fields.length > 0) {
       for (const field of subscriber.custom_fields) {
         // Find custom field definition
@@ -277,8 +281,49 @@ export class ManychatSyncService {
               value: valueStr,
             },
           });
+
+          // Track interaction counts from special custom fields
+          if (field.name === 'messagescountinsta' && typeof field.value === 'number') {
+            messagesCount = field.value;
+          } else if (field.name === 'commentcountinsta' && typeof field.value === 'number') {
+            commentsCount = field.value;
+          } else if (field.name === 'storiescountinsta' && typeof field.value === 'number') {
+            storiesCount = field.value;
+          }
         }
       }
+    }
+
+    // Create interaction history snapshot (daily)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const totalCount = messagesCount + commentsCount + storiesCount;
+
+    // Only create snapshot if there are interactions
+    if (totalCount > 0) {
+      await prisma.interactionHistory.upsert({
+        where: {
+          userId_date: {
+            userId: user.id,
+            date: today,
+          },
+        },
+        create: {
+          userId: user.id,
+          date: today,
+          messagesCount,
+          commentsCount,
+          storiesCount,
+          totalCount,
+        },
+        update: {
+          messagesCount,
+          commentsCount,
+          storiesCount,
+          totalCount,
+        },
+      });
     }
 
     return user.id;

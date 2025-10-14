@@ -56,6 +56,7 @@ model User {
   conversations   Conversation[]
   customFieldValues CustomFieldValue[]
   contactTags     ContactTag[]
+  interactionHistory InteractionHistory[]
 }
 
 // Tool model - mini-applications users can access (QR generator, booking tool, forms, AI chat, etc.)
@@ -293,5 +294,24 @@ model SyncLog {
   @@index([configId])
   @@index([startedAt])
   @@index([status])
+}
+
+// InteractionHistory - tracks user interaction counts over time
+model InteractionHistory {
+  id              String    @id @default(cuid())
+  userId          String
+  date            DateTime  @default(now()) // Date of snapshot
+  messagesCount   Int       @default(0)     // messagescountinsta
+  commentsCount   Int       @default(0)     // commentcountinsta
+  storiesCount    Int       @default(0)     // storiescountinsta
+  totalCount      Int       @default(0)     // Sum of all interactions
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@index([createdAt])
 }
 
