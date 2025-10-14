@@ -326,6 +326,61 @@ export class ManychatSyncService {
       });
     }
 
+    // Create user snapshot (every sync)
+    // Get all custom fields for this user
+    const allCustomFields = await prisma.customFieldValue.findMany({
+      where: { userId: user.id },
+      include: {
+        field: {
+          select: {
+            name: true,
+            type: true,
+          },
+        },
+      },
+    });
+
+    const customFieldsSnapshot = allCustomFields.map((cf) => ({
+      name: cf.field.name,
+      type: cf.field.type,
+      value: cf.value ? JSON.parse(cf.value) : null,
+    }));
+
+    // Get all tags for this user
+    const allTags = await prisma.contactTag.findMany({
+      where: { userId: user.id },
+      include: {
+        tag: {
+          select: {
+            name: true,
+            manychatTagId: true,
+          },
+        },
+      },
+    });
+
+    const tagsSnapshot = allTags.map((ct) => ({
+      name: ct.tag.name,
+      manychatTagId: ct.tag.manychatTagId,
+    }));
+
+    // Create snapshot
+    await prisma.userSnapshot.create({
+      data: {
+        userId: user.id,
+        firstName: subscriber.first_name || null,
+        lastName: subscriber.last_name || null,
+        igUsername: subscriber.ig_username || null,
+        email: subscriber.email || null,
+        phone: subscriber.phone || null,
+        whatsappPhone: subscriber.whatsapp_phone || null,
+        timezone: subscriber.timezone ? String(subscriber.timezone) : null,
+        profilePic: subscriber.profile_pic || null,
+        customFieldsData: JSON.stringify(customFieldsSnapshot),
+        tagsData: JSON.stringify(tagsSnapshot),
+      },
+    });
+
     return user.id;
   }
 

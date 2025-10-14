@@ -57,6 +57,7 @@ model User {
   customFieldValues CustomFieldValue[]
   contactTags     ContactTag[]
   interactionHistory InteractionHistory[]
+  snapshots       UserSnapshot[]
 }
 
 // Tool model - mini-applications users can access (QR generator, booking tool, forms, AI chat, etc.)
@@ -312,6 +313,28 @@ model InteractionHistory {
   @@unique([userId, date])
   @@index([userId])
   @@index([date])
+  @@index([createdAt])
+}
+
+// UserSnapshot - tracks all user data changes over time
+model UserSnapshot {
+  id              String    @id @default(cuid())
+  userId          String
+  firstName       String?
+  lastName        String?
+  igUsername      String?
+  email           String?
+  phone           String?
+  whatsappPhone   String?
+  timezone        String?
+  profilePic      String?
+  customFieldsData String?  @db.Text // JSON snapshot of all custom fields
+  tagsData        String?   @db.Text // JSON snapshot of all tags
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([createdAt])
 }
 

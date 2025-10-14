@@ -24,7 +24,8 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Download
+  Download,
+  History
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -60,6 +61,9 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userHistory, setUserHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -175,6 +179,25 @@ export default function UsersPage() {
     if (!user.lastSyncedAt) return true;
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     return new Date(user.lastSyncedAt) < dayAgo;
+  };
+
+  const loadUserHistory = async (userId: string) => {
+    setLoadingHistory(true);
+    try {
+      const res = await fetch(`/api/users/${userId}/history`);
+      const data = await res.json();
+      setUserHistory(data.history || []);
+    } catch (err) {
+      console.error('Error loading history:', err);
+      setUserHistory([]);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const openHistory = (user: User) => {
+    setSelectedUser(user);
+    loadUserHistory(user.id);
   };
 
   if (loading) {
@@ -402,18 +425,29 @@ export default function UsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRefreshContact(user.id)}
-                        disabled={refreshing}
-                      >
-                        {refreshing ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRefreshContact(user.id)}
+                          disabled={refreshing}
+                          title="Refresh contact data"
+                        >
+                          {refreshing ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openHistory(user)}
+                          title="View history"
+                        >
+                          <History className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -437,6 +471,113 @@ export default function UsersPage() {
             </ul>
           </CardContent>
         </Card>
+      )}
+
+      {/* History Modal */}
+      {selectedUser && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setSelectedUser(null)}
+        >
+          <Card
+            className="w-full max-w-4xl max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div>
+                <CardTitle>History</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {selectedUser.firstName && selectedUser.lastName
+                    ? `${selectedUser.firstName} ${selectedUser.lastName}`
+                    : selectedUser.igUsername
+                    ? `@${selectedUser.igUsername}`
+                    : 'Unknown User'}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedUser(null)}
+              >
+                Close
+              </Button>
+            </CardHeader>
+            <CardContent className="overflow-y-auto max-h-[70vh]">
+              {loadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : userHistory.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No history available yet
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {userHistory.map((snapshot) => (
+                    <div key={snapshot.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm font-medium">
+                          {format(new Date(snapshot.createdAt), 'MMM d, yyyy h:mm a')}
+                        </div>
+                        {snapshot.changes.length > 0 && (
+                          <Badge variant="secondary">
+                            {snapshot.changes.length} {snapshot.changes.length === 1 ? 'change' : 'changes'}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {snapshot.changes.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          <div className="text-sm font-medium text-muted-foreground">Changes:</div>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            {snapshot.changes.map((change: string, idx: number) => (
+                              <li key={idx}>{change}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Custom Fields */}
+                      {snapshot.customFields.length > 0 && (
+                        <div className="mt-3 pt-3 border-t">
+                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                            Custom Fields:
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {snapshot.customFields.map((field: any, idx: number) => (
+                              <div key={idx} className="text-sm">
+                                <span className="font-medium">{field.name}:</span>{' '}
+                                <span className="text-muted-foreground">
+                                  {field.value !== null ? String(field.value) : 'null'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      {snapshot.tags.length > 0 && (
+                        <div className="mt-3 pt-3 border-t">
+                          <div className="text-sm font-medium text-muted-foreground mb-2">
+                            Tags:
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {snapshot.tags.map((tag: any, idx: number) => (
+                              <Badge key={idx} variant="outline">
+                                {tag.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
