@@ -19,8 +19,10 @@ export class ManychatSyncService {
   private adminId: string;
   private configId: string;
 
-  constructor(apiToken: string, adminId: string, configId: string) {
-    this.client = new ManychatClient(apiToken);
+  constructor(pageId: string, apiToken: string, adminId: string, configId: string) {
+    // Combine pageId and apiToken in the format required by Manychat API
+    const fullToken = `${pageId}:${apiToken}`;
+    this.client = new ManychatClient(fullToken);
     this.adminId = adminId;
     this.configId = configId;
   }
@@ -318,9 +320,9 @@ export async function createSyncService(adminId: string): Promise<ManychatSyncSe
     where: { adminId },
   });
 
-  if (!config || !config.active) {
+  if (!config || !config.active || !config.pageId) {
     return null;
   }
 
-  return new ManychatSyncService(config.apiToken, adminId, config.id);
+  return new ManychatSyncService(config.pageId, config.apiToken, adminId, config.id);
 }
