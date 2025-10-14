@@ -320,9 +320,23 @@ export async function createSyncService(adminId: string): Promise<ManychatSyncSe
     where: { adminId },
   });
 
-  if (!config || !config.active || !config.pageId) {
+  if (!config || !config.active) {
     return null;
   }
 
-  return new ManychatSyncService(config.pageId, config.apiToken, adminId, config.id);
+  // Extract pageId from stored value or from apiToken
+  let pageId = config.pageId;
+  let apiToken = config.apiToken;
+
+  // If pageId is not set but apiToken contains it (format: pageId:token)
+  if (!pageId && apiToken.includes(':')) {
+    [pageId, apiToken] = apiToken.split(':', 2);
+  }
+
+  // If we still don't have a pageId, the config is invalid
+  if (!pageId) {
+    return null;
+  }
+
+  return new ManychatSyncService(pageId, apiToken, adminId, config.id);
 }
