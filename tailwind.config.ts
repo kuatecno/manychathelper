@@ -8,18 +8,18 @@ const config: Config = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
+    fontSize: {
+      'xs': ['0.75rem', { lineHeight: '1rem' }],
+      'sm': ['0.875rem', { lineHeight: '1.25rem' }],
+      'base': ['0.875rem', { lineHeight: '1.5rem' }],    // 14px base for mobile
+      'lg': ['1rem', { lineHeight: '1.75rem' }],         // 16px
+      'xl': ['1.125rem', { lineHeight: '1.75rem' }],     // 18px
+      '2xl': ['1.25rem', { lineHeight: '1.75rem' }],     // 20px
+      '3xl': ['1.5rem', { lineHeight: '2rem' }],         // 24px
+      '4xl': ['1.875rem', { lineHeight: '2.25rem' }],    // 30px
+      '5xl': ['2.25rem', { lineHeight: '2.5rem' }],      // 36px
+    },
     extend: {
-      fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
-        'base': ['1rem', { lineHeight: '1.5rem' }],
-        'lg': ['1.125rem', { lineHeight: '1.75rem' }],
-        'xl': ['1.125rem', { lineHeight: '1.75rem' }], // 18px on mobile
-        '2xl': ['1.25rem', { lineHeight: '1.75rem' }], // 20px on mobile
-        '3xl': ['1.5rem', { lineHeight: '2rem' }],     // 24px on mobile
-        '4xl': ['2rem', { lineHeight: '2.5rem' }],
-        '5xl': ['2.5rem', { lineHeight: '1' }],
-      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

@@ -55,8 +55,8 @@
   }
 
   html {
-    /* Responsive base font size: 14px on mobile, scales to 16px on desktop */
-    font-size: clamp(14px, 1.5vw + 0.5rem, 16px);
+    /* Keep base at 16px so rem units work correctly */
+    font-size: 16px;
   }
 
   body {
