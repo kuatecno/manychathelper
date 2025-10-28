@@ -1,4 +1,4 @@
-# Manychat Helper Service
+# Mchat-tools
 
 A powerful Next.js API service for Instagram booking systems and QR code generation via Manychat webhooks.
 
