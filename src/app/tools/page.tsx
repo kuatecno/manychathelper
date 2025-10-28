@@ -391,7 +391,7 @@ export default function ToolsPage() {
                           </TabsTrigger>
                           <TabsTrigger value="campaign">
                             <Settings className="mr-2 h-4 w-4" />
-                            Campaign
+                            QR Content
                           </TabsTrigger>
                         </TabsList>
 
