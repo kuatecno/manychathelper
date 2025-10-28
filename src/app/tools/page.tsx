@@ -708,6 +708,7 @@ export default function ToolsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
