@@ -83,7 +83,38 @@ const defaultQRConfig: QRConfig = {
   },
   type: 'promotion',
   expiresInDays: 30,
-  defaultMetadata: '{\n  "campaign": "summer_sale"\n}',
+  defaultMetadata: '{}',
+};
+
+// Helper function to generate slug from tool name
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/-+/g, '_') // Replace hyphens with underscores
+    .replace(/_+/g, '_') // Replace multiple underscores with single
+    .trim();
+};
+
+// Generate contextual metadata based on tool configuration
+const generateDefaultMetadata = (
+  toolName: string,
+  description: string,
+  campaignType: string
+): string => {
+  if (!toolName.trim()) {
+    return '{}';
+  }
+
+  const metadata = {
+    tool_name: toolName,
+    tool_code: generateSlug(toolName),
+    campaign_type: campaignType,
+    ...(description.trim() && { description: description }),
+  };
+
+  return JSON.stringify(metadata, null, 2);
 };
 
 export default function ToolsPage() {
@@ -101,6 +132,28 @@ export default function ToolsPage() {
   useEffect(() => {
     fetchTools();
   }, []);
+
+  // Auto-generate metadata when tool name, description, or campaign type changes
+  useEffect(() => {
+    if (formData.type === 'qr_generator' && formData.name.trim()) {
+      const newMetadata = generateDefaultMetadata(
+        formData.name,
+        formData.description,
+        qrConfig.type
+      );
+
+      // Only update if current metadata is empty or matches the old default pattern
+      const currentMeta = qrConfig.defaultMetadata.trim();
+      if (
+        currentMeta === '{}' ||
+        currentMeta === '' ||
+        currentMeta.includes('"campaign": "summer_sale"')
+      ) {
+        setQRConfig((prev) => ({ ...prev, defaultMetadata: newMetadata }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.name, formData.description, qrConfig.type]);
 
   const fetchTools = async () => {
     try {
@@ -620,12 +673,12 @@ export default function ToolsPage() {
                               onChange={(e) =>
                                 setQRConfig({ ...qrConfig, defaultMetadata: e.target.value })
                               }
-                              placeholder='{\n  "campaign": "summer_sale",\n  "discount": 20\n}'
+                              placeholder='{\n  "tool_name": "Your Tool Name",\n  "tool_code": "your_tool_name",\n  "campaign_type": "promotion",\n  "description": "Tool description"\n}'
                               rows={6}
                               className="font-mono text-xs"
                             />
                             <p className="text-xs text-muted-foreground">
-                              Optional. Can be merged with Manychat request metadata
+                              Auto-generated from tool name and configuration. Can be merged with Manychat request metadata
                             </p>
                           </div>
                         </TabsContent>
