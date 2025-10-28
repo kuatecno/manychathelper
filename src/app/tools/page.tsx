@@ -32,8 +32,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Wrench, Palette, Code, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wrench, Palette, Code, Settings, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 interface Tool {
   id: string;
@@ -298,13 +299,20 @@ export default function ToolsPage() {
             Manage mini-applications that users can access through Manychat
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Tool
+        <div className="flex gap-2">
+          <Link href="/settings/manychat/instructions">
+            <Button variant="outline">
+              <BookOpen className="mr-2 h-4 w-4" />
+              Integration Guide
             </Button>
-          </DialogTrigger>
+          </Link>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Tool
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingId ? 'Edit Tool' : 'Add New Tool'}</DialogTitle>

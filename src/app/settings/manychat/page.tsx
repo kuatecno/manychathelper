@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ManychatSettingsPage() {
   const router = useRouter();
@@ -222,11 +223,19 @@ export default function ManychatSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Manychat Integration</h1>
-        <p className="text-muted-foreground mt-2">
-          Configure your Manychat API connection to sync contacts and data
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Manychat Integration</h1>
+          <p className="text-muted-foreground mt-2">
+            Configure your Manychat API connection to sync contacts and data
+          </p>
+        </div>
+        <Link href="/settings/manychat/instructions">
+          <Button variant="outline">
+            <BookOpen className="mr-2 h-4 w-4" />
+            Integration Guide
+          </Button>
+        </Link>
       </div>
 
       {error && (
