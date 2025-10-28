@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Trash2, Tag, FileText, Sparkles, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Tag, FileText, Sparkles, AlertCircle, Settings2 } from 'lucide-react';
 
 interface Tag {
   id: string;
@@ -27,7 +27,7 @@ interface CustomField {
 interface MetadataEntry {
   key: string;
   value: string;
-  type: 'static' | 'tag' | 'custom_field';
+  type: 'static' | 'tag' | 'custom_field' | 'system_field';
   fieldType?: string;
 }
 
@@ -75,6 +75,20 @@ const TEMPLATES = {
     },
   },
 };
+
+// Manychat System Fields
+const SYSTEM_FIELDS = [
+  { id: 'first_name', name: 'First Name', description: 'User first name' },
+  { id: 'last_name', name: 'Last Name', description: 'User last name' },
+  { id: 'full_name', name: 'Full Name', description: 'User full name' },
+  { id: 'email', name: 'Email', description: 'User email address' },
+  { id: 'phone', name: 'Phone', description: 'User phone number' },
+  { id: 'gender', name: 'Gender', description: 'User gender' },
+  { id: 'locale', name: 'Locale', description: 'User locale/language' },
+  { id: 'timezone', name: 'Timezone', description: 'User timezone' },
+  { id: 'profile_pic', name: 'Profile Picture', description: 'User profile picture URL' },
+  { id: 'subscribed_at', name: 'Subscribed Date', description: 'When user subscribed' },
+];
 
 export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignType }: MetadataBuilderProps) {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -165,7 +179,7 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
     onChange(JSON.stringify(metadata, null, 2));
   };
 
-  const addEntry = (type: 'static' | 'tag' | 'custom_field') => {
+  const addEntry = (type: 'static' | 'tag' | 'custom_field' | 'system_field') => {
     setEntries([
       ...entries,
       {
@@ -209,6 +223,8 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
         return <Tag className="h-4 w-4" />;
       case 'custom_field':
         return <FileText className="h-4 w-4" />;
+      case 'system_field':
+        return <Settings2 className="h-4 w-4" />;
       default:
         return <Sparkles className="h-4 w-4" />;
     }
@@ -249,7 +265,7 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
       </Alert>
 
       {/* Add Buttons */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
           variant="outline"
@@ -258,6 +274,15 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Static Value
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => addEntry('system_field')}
+        >
+          <Settings2 className="mr-2 h-4 w-4" />
+          Add System Field
         </Button>
         {tags.length > 0 && (
           <Button
@@ -332,6 +357,27 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
                           {customFields.map((field) => (
                             <SelectItem key={field.id} value={field.manychatFieldId}>
                               {field.name} ({field.type})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : entry.type === 'system_field' ? (
+                      <Select
+                        value={entry.value}
+                        onValueChange={(val) => updateEntry(index, 'value', val)}
+                      >
+                        <SelectTrigger className="text-sm">
+                          <SelectValue placeholder="Select system field" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SYSTEM_FIELDS.map((field) => (
+                            <SelectItem key={field.id} value={field.id}>
+                              {field.name}
+                              {field.description && (
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  - {field.description}
+                                </span>
+                              )}
                             </SelectItem>
                           ))}
                         </SelectContent>
