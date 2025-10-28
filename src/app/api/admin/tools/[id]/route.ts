@@ -11,6 +11,41 @@ const UpdateToolSchema = z.object({
   manychatFlowId: z.string().optional().nullable(),
 });
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const tool = await prisma.tool.findUnique({
+      where: { id },
+    });
+
+    if (!tool) {
+      return NextResponse.json({ error: 'Tool not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      tool: {
+        id: tool.id,
+        name: tool.name,
+        type: tool.type,
+        description: tool.description,
+        active: tool.active,
+        config: tool.config,
+        manychatFlowId: tool.manychatFlowId,
+        createdAt: tool.createdAt.toISOString(),
+        updatedAt: tool.updatedAt.toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching tool:', error);
+    return NextResponse.json({ error: 'Failed to fetch tool' }, { status: 500 });
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

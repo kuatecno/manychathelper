@@ -117,7 +117,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
           Overview of your Manychat Helper service
         </p>
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
               <card.icon className={`h-4 w-4 ${card.color}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-2xl font-bold">{card.value}</div>
+              <div className="text-2xl font-bold">{card.value}</div>
               <p className="text-xs text-muted-foreground">{card.subtitle}</p>
             </CardContent>
           </Card>
@@ -237,15 +237,15 @@ export default function AdminDashboard() {
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Pending Bookings</p>
-              <p className="text-xl md:text-2xl font-bold">{stats.bookings.pending}</p>
+              <p className="text-2xl font-bold">{stats.bookings.pending}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Confirmed Bookings</p>
-              <p className="text-xl md:text-2xl font-bold">{stats.bookings.confirmed}</p>
+              <p className="text-2xl font-bold">{stats.bookings.confirmed}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">This Month</p>
-              <p className="text-xl md:text-2xl font-bold">{stats.bookings.month}</p>
+              <p className="text-2xl font-bold">{stats.bookings.month}</p>
             </div>
           </div>
         </CardContent>

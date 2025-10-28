@@ -201,7 +201,7 @@ export default function UserDetailPage() {
               </div>
             )}
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{userName}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{userName}</h1>
               <p className="text-muted-foreground">
                 {user.igUsername && `@${user.igUsername} · `}ID: {user.manychatId}
               </p>
@@ -234,7 +234,7 @@ export default function UserDetailPage() {
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-2xl font-bold">
+              <div className="text-2xl font-bold">
                 {messagesField?.value || 0}
               </div>
             </CardContent>
@@ -246,7 +246,7 @@ export default function UserDetailPage() {
               <MessageCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-2xl font-bold">
+              <div className="text-2xl font-bold">
                 {commentsField?.value || 0}
               </div>
             </CardContent>
@@ -258,7 +258,7 @@ export default function UserDetailPage() {
               <ImageIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-2xl font-bold">
+              <div className="text-2xl font-bold">
                 {storiesField?.value || 0}
               </div>
             </CardContent>

@@ -58,7 +58,7 @@ export default function RegisterPage() {
               <QrCode className="h-7 w-7" />
             </div>
           </div>
-          <CardTitle className="text-xl md:text-2xl text-center">Create an account</CardTitle>
+          <CardTitle className="text-2xl text-center">Create an account</CardTitle>
           <CardDescription className="text-center">
             Register to create and manage your Manychat tools
           </CardDescription>

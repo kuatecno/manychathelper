@@ -90,6 +90,7 @@ export default function ToolsPage() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     type: 'qr_generator',
@@ -140,6 +141,36 @@ export default function ToolsPage() {
     }
   };
 
+  const openEditDialog = async (tool: Tool) => {
+    setEditingId(tool.id);
+    setFormData({
+      name: tool.name,
+      type: tool.type,
+      description: tool.description || '',
+    });
+
+    // Fetch full tool config
+    try {
+      const res = await fetch(`/api/admin/tools/${tool.id}`);
+      const data = await res.json();
+
+      if (data.tool.config && tool.type === 'qr_generator') {
+        setQRConfig(JSON.parse(data.tool.config));
+      }
+    } catch (error) {
+      console.error('Error fetching tool details:', error);
+    }
+
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingId(null);
+    setFormData({ name: '', type: 'qr_generator', description: '' });
+    setQRConfig(defaultQRConfig);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -150,8 +181,11 @@ export default function ToolsPage() {
         config = qrConfig;
       }
 
-      const res = await fetch('/api/admin/tools', {
-        method: 'POST',
+      const url = editingId ? `/api/admin/tools/${editingId}` : '/api/admin/tools';
+      const method = editingId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
@@ -160,13 +194,11 @@ export default function ToolsPage() {
       });
 
       if (res.ok) {
-        setDialogOpen(false);
-        setFormData({ name: '', type: 'qr_generator', description: '' });
-        setQRConfig(defaultQRConfig);
+        closeDialog();
         fetchTools();
       }
     } catch (error) {
-      console.error('Error creating tool:', error);
+      console.error(`Error ${editingId ? 'updating' : 'creating'} tool:`, error);
     }
   };
 
@@ -208,7 +240,7 @@ export default function ToolsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Tools</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Tools</h1>
           <p className="text-muted-foreground">
             Manage mini-applications that users can access through Manychat
           </p>
@@ -222,9 +254,11 @@ export default function ToolsPage() {
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Add New Tool</DialogTitle>
+              <DialogTitle>{editingId ? 'Edit Tool' : 'Add New Tool'}</DialogTitle>
               <DialogDescription>
-                Create a new tool for users to interact with via Manychat.
+                {editingId
+                  ? 'Update the tool configuration.'
+                  : 'Create a new tool for users to interact with via Manychat.'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -604,11 +638,11 @@ export default function ToolsPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setDialogOpen(false)}
+                  onClick={closeDialog}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Create Tool</Button>
+                <Button type="submit">{editingId ? 'Update Tool' : 'Create Tool'}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -666,7 +700,11 @@ export default function ToolsPage() {
                         >
                           {tool.active ? '⏸' : '▶️'}
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(tool)}
+                        >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button

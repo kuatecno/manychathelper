@@ -67,7 +67,7 @@ export default function WebhookHelperPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Webhook Configuration Helper</h1>
+        <h1 className="text-3xl font-bold">Webhook Configuration Helper</h1>
         <p className="text-muted-foreground mt-2">
           Copy these values to configure your Manychat automation
         </p>

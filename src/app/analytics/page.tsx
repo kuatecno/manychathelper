@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Interaction Analytics</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Interaction Analytics</h1>
           <p className="text-muted-foreground">
             Track Instagram interactions from messages, comments, and stories
           </p>
@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-xl md:text-2xl font-bold">{data.totals.total.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{data.totals.total.toLocaleString()}</div>
                 <GrowthIndicator value={data.growth.total} />
                 <p className="text-xs text-muted-foreground mt-1">vs previous {period} days</p>
               </CardContent>
@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-xl md:text-2xl font-bold">{data.totals.messages.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{data.totals.messages.toLocaleString()}</div>
                 <GrowthIndicator value={data.growth.messages} />
                 <p className="text-xs text-muted-foreground mt-1">Direct messages sent</p>
               </CardContent>
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
                 <MessageCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-xl md:text-2xl font-bold">{data.totals.comments.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{data.totals.comments.toLocaleString()}</div>
                 <GrowthIndicator value={data.growth.comments} />
                 <p className="text-xs text-muted-foreground mt-1">Post comments made</p>
               </CardContent>
@@ -192,7 +192,7 @@ export default function AnalyticsPage() {
                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-xl md:text-2xl font-bold">{data.totals.stories.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{data.totals.stories.toLocaleString()}</div>
                 <GrowthIndicator value={data.growth.stories} />
                 <p className="text-xs text-muted-foreground mt-1">Story replies sent</p>
               </CardContent>

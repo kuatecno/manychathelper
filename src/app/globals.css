@@ -53,26 +53,7 @@
   * {
     @apply border-border;
   }
-
-  html {
-    /* Keep base at 16px so rem units work correctly */
-    font-size: 16px;
-  }
-
   body {
     @apply bg-background text-foreground;
-  }
-
-  /* Ensure headings scale proportionally on mobile */
-  @media (max-width: 640px) {
-    h1 {
-      @apply text-2xl;
-    }
-    h2 {
-      @apply text-xl;
-    }
-    h3 {
-      @apply text-lg;
-    }
   }
 }

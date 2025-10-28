@@ -68,7 +68,7 @@ function LoginForm() {
               <QrCode className="h-7 w-7" />
             </div>
           </div>
-          <CardTitle className="text-xl md:text-2xl text-center">Welcome back</CardTitle>
+          <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
           <CardDescription className="text-center">
             Sign in to your Manychat admin account
           </CardDescription>
