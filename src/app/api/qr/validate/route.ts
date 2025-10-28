@@ -5,6 +5,7 @@ import { z } from 'zod';
 const ValidateQRSchema = z.object({
   code: z.string(),
   scanned_by: z.string().optional(),
+  apply_actions: z.boolean().optional(), // If true, apply tags and custom fields
 });
 
 export async function POST(request: NextRequest) {
@@ -57,6 +58,36 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Parse metadata to check for actions
+    let metadata: any = null;
+    const actionsApplied: any = {
+      tags: [],
+      custom_fields: [],
+    };
+
+    if (qrCode.metadata) {
+      try {
+        metadata = JSON.parse(qrCode.metadata);
+      } catch (e) {
+        console.error('Failed to parse metadata:', e);
+      }
+    }
+
+    // Apply actions if requested and metadata contains action directives
+    if (validated.apply_actions && metadata) {
+      // Apply tags if specified (metadata can contain tag IDs to apply)
+      if (metadata.apply_tags && Array.isArray(metadata.apply_tags)) {
+        // Note: This would require Manychat API call to apply tags
+        // For now, we log what would be applied
+        actionsApplied.tags = metadata.apply_tags;
+      }
+
+      // Log custom field updates that should be made
+      if (metadata.update_fields && typeof metadata.update_fields === 'object') {
+        actionsApplied.custom_fields = metadata.update_fields;
+      }
+    }
+
     // Mark as scanned
     const updatedQR = await prisma.qRCode.update({
       where: { id: qrCode.id },
@@ -72,8 +103,9 @@ export async function POST(request: NextRequest) {
       type: updatedQR.type,
       user_id: qrCode.user.manychatId,
       user_name: `${qrCode.user.firstName || ''} ${qrCode.user.lastName || ''}`.trim(),
-      metadata: updatedQR.metadata ? JSON.parse(updatedQR.metadata) : null,
+      metadata: metadata || {},
       scanned_at: updatedQR.scannedAt?.toISOString(),
+      actions_to_apply: validated.apply_actions ? actionsApplied : undefined,
     });
   } catch (error) {
     console.error('Error validating QR code:', error);

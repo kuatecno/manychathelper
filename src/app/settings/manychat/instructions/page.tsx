@@ -261,14 +261,29 @@ export default function ManychatInstructionsPage() {
                         <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
 {`{
   "code": {{code_to_validate}},
-  "scanned_by": "Store Name"
+  "scanned_by": "Store Name",
+  "apply_actions": true
 }`}
                         </pre>
                         <div className="absolute top-2 right-2">
                           <CopyButton
-                            text={`{\n  "code": {{code_to_validate}},\n  "scanned_by": "Store Name"\n}`}
+                            text={`{\n  "code": {{code_to_validate}},\n  "scanned_by": "Store Name",\n  "apply_actions": true\n}`}
                             id={`qr-validate-body-${tool.id}`}
                           />
+                        </div>
+                      </div>
+                      <Alert>
+                        <AlertDescription className="text-sm">
+                          <strong>apply_actions: true</strong> - Returns metadata with any tag/field actions defined in the QR.
+                          You can then use this data in your Manychat flow to tag users or update custom fields.
+                        </AlertDescription>
+                      </Alert>
+                      <div className="space-y-2 mt-4">
+                        <div className="text-sm font-semibold">Response includes:</div>
+                        <div className="rounded-lg bg-muted p-4 space-y-2 text-sm font-mono">
+                          <div>• metadata - All QR metadata (discount, campaign, etc.)</div>
+                          <div>• actions_to_apply - Tags and fields to update</div>
+                          <div>• user_id - Manychat subscriber ID</div>
                         </div>
                       </div>
                     </div>

@@ -35,6 +35,7 @@ import {
 import { Plus, Pencil, Trash2, Wrench, Palette, Code, Settings, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { MetadataBuilder } from '@/components/MetadataBuilder';
 
 interface Tool {
   id: string;
@@ -674,20 +675,16 @@ export default function ToolsPage() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="metadata">Default Metadata (JSON)</Label>
-                            <Textarea
-                              id="metadata"
+                            <Label>Default Metadata</Label>
+                            <MetadataBuilder
                               value={qrConfig.defaultMetadata}
-                              onChange={(e) =>
-                                setQRConfig({ ...qrConfig, defaultMetadata: e.target.value })
+                              onChange={(value) =>
+                                setQRConfig({ ...qrConfig, defaultMetadata: value })
                               }
-                              placeholder='{\n  "tool_name": "Your Tool Name",\n  "tool_code": "your_tool_name",\n  "campaign_type": "promotion",\n  "description": "Tool description"\n}'
-                              rows={6}
-                              className="font-mono text-xs"
+                              toolName={formData.name}
+                              toolCode={generateSlug(formData.name)}
+                              campaignType={qrConfig.type}
                             />
-                            <p className="text-xs text-muted-foreground">
-                              Auto-generated from tool name and configuration. Can be merged with Manychat request metadata
-                            </p>
                           </div>
                         </TabsContent>
                       </Tabs>
