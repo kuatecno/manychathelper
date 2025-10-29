@@ -5,8 +5,8 @@ import { AdminSidebar } from '@/components/admin-sidebar';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Manychat Admin',
-  description: 'Admin panel for Manychat tools and automation',
+  title: 'Mchat-Tools',
+  description: 'Admin panel for Mchat-Tools and automation',
 };
 
 export default function RootLayout({
