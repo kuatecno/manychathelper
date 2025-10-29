@@ -36,6 +36,7 @@ import { Plus, Pencil, Trash2, Wrench, Palette, Code, Settings, BookOpen } from 
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { MetadataBuilder } from '@/components/MetadataBuilder';
+import { QRCodeFormatBuilder } from '@/components/QRCodeFormatBuilder';
 
 interface Tool {
   id: string;
@@ -63,6 +64,7 @@ interface QRConfig {
     includeRandom: boolean;
     customFormat: string;
   };
+  qrCodeFormat?: string; // Dynamic format pattern with placeholders
   type: string;
   expiresInDays: number | null;
   defaultMetadata: string; // JSON string
@@ -83,6 +85,7 @@ const defaultQRConfig: QRConfig = {
     includeRandom: true,
     customFormat: '{PREFIX}-{USER_ID}-{TIMESTAMP}-{RANDOM}',
   },
+  qrCodeFormat: 'QR-{{id}}', // Default: simple user ID based
   type: 'promotion',
   expiresInDays: 30,
   defaultMetadata: '{}',
@@ -533,102 +536,12 @@ export default function ToolsPage() {
 
                         {/* Format Tab */}
                         <TabsContent value="format" className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="prefix">Prefix</Label>
-                            <Input
-                              id="prefix"
-                              value={qrConfig.qrFormat.prefix}
-                              onChange={(e) =>
-                                setQRConfig({
-                                  ...qrConfig,
-                                  qrFormat: { ...qrConfig.qrFormat, prefix: e.target.value },
-                                })
-                              }
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Include in QR Code:</Label>
-                            <div className="space-y-2">
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={qrConfig.qrFormat.includeUserId}
-                                  onChange={(e) =>
-                                    setQRConfig({
-                                      ...qrConfig,
-                                      qrFormat: {
-                                        ...qrConfig.qrFormat,
-                                        includeUserId: e.target.checked,
-                                      },
-                                    })
-                                  }
-                                  className="h-4 w-4"
-                                />
-                                <span className="text-sm">User ID</span>
-                              </label>
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={qrConfig.qrFormat.includeTimestamp}
-                                  onChange={(e) =>
-                                    setQRConfig({
-                                      ...qrConfig,
-                                      qrFormat: {
-                                        ...qrConfig.qrFormat,
-                                        includeTimestamp: e.target.checked,
-                                      },
-                                    })
-                                  }
-                                  className="h-4 w-4"
-                                />
-                                <span className="text-sm">Timestamp</span>
-                              </label>
-                              <label className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={qrConfig.qrFormat.includeRandom}
-                                  onChange={(e) =>
-                                    setQRConfig({
-                                      ...qrConfig,
-                                      qrFormat: {
-                                        ...qrConfig.qrFormat,
-                                        includeRandom: e.target.checked,
-                                      },
-                                    })
-                                  }
-                                  className="h-4 w-4"
-                                />
-                                <span className="text-sm">Random string</span>
-                              </label>
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="customFormat">Custom Format</Label>
-                            <Input
-                              id="customFormat"
-                              value={qrConfig.qrFormat.customFormat}
-                              onChange={(e) =>
-                                setQRConfig({
-                                  ...qrConfig,
-                                  qrFormat: {
-                                    ...qrConfig.qrFormat,
-                                    customFormat: e.target.value,
-                                  },
-                                })
-                              }
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Variables: {'{PREFIX}'}, {'{TYPE}'}, {'{USER_ID}'}, {'{TIMESTAMP}'},{' '}
-                              {'{RANDOM}'}
-                            </p>
-                          </div>
-
-                          <div className="rounded-lg border bg-muted/50 p-4">
-                            <Label className="text-sm font-semibold">Preview:</Label>
-                            <p className="mt-2 font-mono text-sm">{generatePreviewCode()}</p>
-                          </div>
+                          <QRCodeFormatBuilder
+                            value={qrConfig.qrCodeFormat || 'QR-{{id}}'}
+                            onChange={(value) =>
+                              setQRConfig({ ...qrConfig, qrCodeFormat: value })
+                            }
+                          />
                         </TabsContent>
 
                         {/* Campaign Tab */}

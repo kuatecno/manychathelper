@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { ManychatSubscriber } from './manychat-client';
 
 export interface QRAppearanceSettings {
   width: number;
@@ -110,4 +111,72 @@ export function generateUniqueCode(
   code = code.replace(/--+/g, '-').replace(/^-|-$/g, '');
 
   return code;
+}
+
+export interface QRCodeFormatResolverData {
+  manychatSubscriber?: ManychatSubscriber;
+  tags?: Array<{ manychatTagId: string; name: string }>;
+  customFields?: Array<{ manychatFieldId: string; name: string; value?: any }>;
+}
+
+/**
+ * Resolve dynamic placeholders in QR code format pattern
+ * Supports:
+ * - {{first_name}}, {{last_name}}, {{email}}, etc. (system fields)
+ * - {{tag:TAG_ID}} (tag references)
+ * - {{custom_field:FIELD_ID}} (custom field references)
+ */
+export function resolveQRCodeFormat(
+  pattern: string,
+  data: QRCodeFormatResolverData
+): string {
+  let resolved = pattern;
+
+  // Replace system fields from Manychat subscriber
+  if (data.manychatSubscriber) {
+    const subscriber = data.manychatSubscriber;
+    const systemFieldMap: Record<string, any> = {
+      id: subscriber.id,
+      first_name: subscriber.first_name || '',
+      last_name: subscriber.last_name || '',
+      full_name: subscriber.name || `${subscriber.first_name || ''} ${subscriber.last_name || ''}`.trim(),
+      email: subscriber.email || '',
+      phone: subscriber.phone || '',
+      gender: subscriber.gender || '',
+      locale: subscriber.locale || '',
+      timezone: subscriber.timezone || '',
+      profile_pic: subscriber.profile_pic || '',
+      subscribed_at: subscriber.subscribed || '',
+    };
+
+    // Replace {{field_name}} with actual values
+    Object.keys(systemFieldMap).forEach((field) => {
+      const regex = new RegExp(`\\{\\{${field}\\}\\}`, 'g');
+      resolved = resolved.replace(regex, String(systemFieldMap[field] || ''));
+    });
+  }
+
+  // Replace tag references: {{tag:TAG_ID}}
+  if (data.tags) {
+    data.tags.forEach((tag) => {
+      const regex = new RegExp(`\\{\\{tag:${tag.manychatTagId}\\}\\}`, 'g');
+      resolved = resolved.replace(regex, tag.name || '');
+    });
+  }
+
+  // Replace custom field references: {{custom_field:FIELD_ID}}
+  if (data.customFields) {
+    data.customFields.forEach((field) => {
+      const regex = new RegExp(`\\{\\{custom_field:${field.manychatFieldId}\\}\\}`, 'g');
+      resolved = resolved.replace(regex, String(field.value || ''));
+    });
+  }
+
+  // Clean up any remaining unreplaced placeholders
+  resolved = resolved.replace(/\{\{[^}]+\}\}/g, '');
+
+  // Clean up double dashes, spaces, or leading/trailing dashes
+  resolved = resolved.replace(/--+/g, '-').replace(/\s+/g, '-').replace(/^-|-$/g, '');
+
+  return resolved;
 }

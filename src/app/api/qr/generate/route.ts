@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { GenerateQRSchema } from '@/lib/types';
-import { generateUniqueCode } from '@/lib/qr';
+import { generateUniqueCode, resolveQRCodeFormat } from '@/lib/qr';
+import { createManychatClient } from '@/lib/manychat-client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,7 +12,13 @@ export async function POST(request: NextRequest) {
     // Load tool configuration and admin info
     const tool = await prisma.tool.findUnique({
       where: { id: validated.tool_id },
-      include: { admin: true },
+      include: {
+        admin: {
+          include: {
+            manychatConfig: true,
+          },
+        },
+      },
     });
 
     if (!tool) {
@@ -61,12 +68,69 @@ export async function POST(request: NextRequest) {
     // Determine QR type (request overrides tool default)
     const qrType = validated.type || toolConfig?.type || 'promotion';
 
-    // Generate unique code with tool's format settings
-    const code = generateUniqueCode(
-      user.id,
-      qrType,
-      toolConfig?.qrFormat
-    );
+    // Generate code - use dynamic format if configured, otherwise use legacy format
+    let code: string;
+
+    if (toolConfig?.qrCodeFormat) {
+      // Use new dynamic format system with Manychat data
+      try {
+        let manychatSubscriber;
+        let tags: Array<{ manychatTagId: string; name: string }> = [];
+        let customFields: Array<{ manychatFieldId: string; name: string; value?: any }> = [];
+
+        // Fetch Manychat data if API token is available
+        if (tool.admin.manychatConfig?.apiToken) {
+          const manychatClient = createManychatClient(tool.admin.manychatConfig.apiToken);
+
+          // Get subscriber info
+          try {
+            const subscriberResponse = await manychatClient.getSubscriberInfo(
+              Number(validated.manychat_user_id)
+            );
+            manychatSubscriber = subscriberResponse.data;
+
+            // Extract tags from subscriber if present
+            if (manychatSubscriber.tags) {
+              tags = manychatSubscriber.tags.map(tag => ({
+                manychatTagId: String(tag.id),
+                name: tag.name,
+              }));
+            }
+
+            // Extract custom fields from subscriber if present
+            if (manychatSubscriber.custom_fields) {
+              customFields = manychatSubscriber.custom_fields.map(field => ({
+                manychatFieldId: String(field.id),
+                name: field.name,
+                value: field.value,
+              }));
+            }
+          } catch (manychatError) {
+            console.warn('Failed to fetch Manychat subscriber data:', manychatError);
+            // Continue with empty data
+          }
+        }
+
+        // Resolve the dynamic format pattern
+        code = resolveQRCodeFormat(toolConfig.qrCodeFormat, {
+          manychatSubscriber,
+          tags,
+          customFields,
+        });
+
+        // If resolution resulted in empty code, use fallback
+        if (!code || code.trim() === '') {
+          code = generateUniqueCode(user.id, qrType, toolConfig?.qrFormat);
+        }
+      } catch (error) {
+        console.error('Error resolving dynamic QR format:', error);
+        // Fallback to legacy format
+        code = generateUniqueCode(user.id, qrType, toolConfig?.qrFormat);
+      }
+    } else {
+      // Use legacy format system
+      code = generateUniqueCode(user.id, qrType, toolConfig?.qrFormat);
+    }
 
     // Calculate expiration (request overrides tool default)
     let expiresAt: Date | null = null;
