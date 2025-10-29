@@ -120,11 +120,24 @@ export interface QRCodeFormatResolverData {
 }
 
 /**
+ * Generate a random alphanumeric string
+ */
+function generateRandomString(length: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+/**
  * Resolve dynamic placeholders in QR code format pattern
  * Supports:
  * - {{first_name}}, {{last_name}}, {{email}}, etc. (system fields)
  * - {{tag:TAG_ID}} (tag references)
  * - {{custom_field:FIELD_ID}} (custom field references)
+ * - {{random}} or {{random:N}} (random string of N characters, default 6)
  */
 export function resolveQRCodeFormat(
   pattern: string,
@@ -171,6 +184,12 @@ export function resolveQRCodeFormat(
       resolved = resolved.replace(regex, String(field.value || ''));
     });
   }
+
+  // Replace random string placeholders: {{random}} or {{random:6}}
+  resolved = resolved.replace(/\{\{random(?::(\d+))?\}\}/g, (match, lengthStr) => {
+    const length = lengthStr ? parseInt(lengthStr) : 6;
+    return generateRandomString(length);
+  });
 
   // Clean up any remaining unreplaced placeholders
   resolved = resolved.replace(/\{\{[^}]+\}\}/g, '');

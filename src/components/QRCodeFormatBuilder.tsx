@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Trash2, Tag, FileText, AlertCircle, Settings2, Hash } from 'lucide-react';
+import { Plus, Trash2, Tag, FileText, AlertCircle, Settings2, Hash, Shuffle } from 'lucide-react';
 
 interface Tag {
   id: string;
@@ -24,9 +24,10 @@ interface CustomField {
 }
 
 interface FormatPart {
-  type: 'static' | 'tag' | 'custom_field' | 'system_field';
+  type: 'static' | 'tag' | 'custom_field' | 'system_field' | 'random';
   value: string;
   displayName?: string;
+  length?: number; // For random strings
 }
 
 interface QRCodeFormatBuilderProps {
@@ -136,6 +137,16 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
             value: `{{${placeholder}}}`,
             displayName: field?.name || fieldId,
           });
+        } else if (placeholder.startsWith('random')) {
+          // Random string: {{random}} or {{random:6}}
+          const lengthMatch = placeholder.match(/random:(\d+)/);
+          const length = lengthMatch ? parseInt(lengthMatch[1]) : 6;
+          parsed.push({
+            type: 'random',
+            value: `{{${placeholder}}}`,
+            displayName: `Random (${length} chars)`,
+            length,
+          });
         } else {
           // System field
           const field = SYSTEM_FIELDS.find(f => f.id === placeholder);
@@ -159,9 +170,11 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
     }
   };
 
-  const addPart = (type: 'static' | 'tag' | 'custom_field' | 'system_field') => {
+  const addPart = (type: 'static' | 'tag' | 'custom_field' | 'system_field' | 'random') => {
     if (type === 'static') {
       setParts([...parts, { type: 'static', value: '-' }]);
+    } else if (type === 'random') {
+      setParts([...parts, { type: 'random', value: '{{random:6}}', displayName: 'Random (6 chars)', length: 6 }]);
     } else {
       setParts([...parts, { type, value: '', displayName: '' }]);
     }
@@ -202,6 +215,17 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
     }
   };
 
+  const updateRandomLength = (index: number, length: number) => {
+    const newParts = [...parts];
+    const part = newParts[index];
+    if (part.type === 'random') {
+      part.length = length;
+      part.value = `{{random:${length}}}`;
+      part.displayName = `Random (${length} chars)`;
+      setParts(newParts);
+    }
+  };
+
   const getFieldIcon = (type: string) => {
     switch (type) {
       case 'tag':
@@ -210,6 +234,8 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
         return <FileText className="h-4 w-4" />;
       case 'system_field':
         return <Settings2 className="h-4 w-4" />;
+      case 'random':
+        return <Shuffle className="h-4 w-4" />;
       default:
         return <Hash className="h-4 w-4" />;
     }
@@ -274,6 +300,15 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
         >
           <Settings2 className="mr-2 h-4 w-4" />
           Add System Field
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => addPart('random')}
+        >
+          <Shuffle className="mr-2 h-4 w-4" />
+          Add Random String
         </Button>
         {tags.length > 0 && (
           <Button
@@ -353,7 +388,23 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
                         ))}
                       </SelectContent>
                     </Select>
-                  ) : (
+                  ) : part.type === 'random' ? (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Random String Length</Label>
+                      <Input
+                        type="number"
+                        placeholder="6"
+                        value={part.length || 6}
+                        onChange={(e) => {
+                          const length = parseInt(e.target.value) || 6;
+                          updateRandomLength(index, length);
+                        }}
+                        min={1}
+                        max={32}
+                        className="text-sm"
+                      />
+                    </div>
+                  ) : part.type === 'custom_field' ? (
                     <Select
                       value={part.value.replace(/\{\{custom_field:|\}\}/g, '')}
                       onValueChange={(val) => updatePart(index, val)}
@@ -369,7 +420,7 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
                         ))}
                       </SelectContent>
                     </Select>
-                  )}
+                  ) : null}
                 </div>
                 <Button
                   type="button"
