@@ -675,7 +675,7 @@ export default function ToolsPage() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Default Metadata</Label>
+                            <Label>Validation Data (returned when QR is scanned)</Label>
                             <MetadataBuilder
                               value={qrConfig.defaultMetadata}
                               onChange={(value) =>

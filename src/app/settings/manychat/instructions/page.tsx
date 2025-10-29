@@ -157,6 +157,19 @@ export default function ManychatInstructionsPage() {
                   <CardDescription>{tool.description || 'QR Code Generator'}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* How it Works */}
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      <strong>📱 How QR Codes Work:</strong>
+                      <div className="mt-2 space-y-1 text-xs">
+                        <div>1️⃣ QR image contains: <code className="bg-muted px-1 py-0.5 rounded">QR-abc123-xyz</code> (just the code)</div>
+                        <div>2️⃣ Metadata stored in database: <code className="bg-muted px-1 py-0.5 rounded">{'{discount: 25, campaign: "bf2025"}'}</code></div>
+                        <div>3️⃣ When scanned & validated → API returns the metadata</div>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+
                   {/* Your Tool ID */}
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">Your Tool Information</h3>
@@ -279,12 +292,33 @@ export default function ManychatInstructionsPage() {
                         </AlertDescription>
                       </Alert>
                       <div className="space-y-2 mt-4">
-                        <div className="text-sm font-semibold">Response includes:</div>
-                        <div className="rounded-lg bg-muted p-4 space-y-2 text-sm font-mono">
-                          <div>• metadata - All QR metadata (discount, campaign, etc.)</div>
-                          <div>• actions_to_apply - Tags and fields to update</div>
-                          <div>• user_id - Manychat subscriber ID</div>
-                        </div>
+                        <div className="text-sm font-semibold">Example Response:</div>
+                        <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
+{`{
+  "valid": true,
+  "qr_id": "cm123abc...",
+  "type": "promotion",
+  "user_id": "1234567890",
+  "user_name": "John Doe",
+  "metadata": {
+    "tool_name": "${tool.name}",
+    "campaign_type": "promotion",
+    "discount": 25,
+    "campaign": "black_friday"
+  },
+  "scanned_at": "2025-10-28T10:30:00Z",
+  "actions_to_apply": {
+    "tags": [],
+    "custom_fields": []
+  }
+}`}
+                        </pre>
+                        <Alert className="border-green-500 bg-green-50 dark:bg-green-900/20">
+                          <AlertDescription className="text-xs text-green-800 dark:text-green-200">
+                            <strong>💡 The metadata object</strong> contains all the data you configured in the tool.
+                            Use this in your Manychat flow to apply discounts, tag users, or trigger actions!
+                          </AlertDescription>
+                        </Alert>
                       </div>
                     </div>
                   </StepCard>

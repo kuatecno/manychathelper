@@ -236,6 +236,22 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
 
   return (
     <div className="space-y-4">
+      {/* Explanation Card */}
+      <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-900/20">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="text-sm">
+          <strong>ℹ️ What is Metadata?</strong>
+          <div className="mt-2 space-y-1">
+            <div>• The QR image contains <strong>only a code</strong> like "QR-abc123-xyz"</div>
+            <div>• This metadata is <strong>stored in the database</strong></div>
+            <div>• When the QR is <strong>validated</strong>, this data is returned to your system</div>
+            <div className="mt-2 pt-2 border-t border-blue-300">
+              <strong>Use it for:</strong> Campaign info (discount %), user data (email, phone), or any data you need when the QR is scanned
+            </div>
+          </div>
+        </AlertDescription>
+      </Alert>
+
       {/* Templates */}
       <div className="space-y-2">
         <Label>Quick Start Templates</Label>
