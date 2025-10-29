@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { createManychatClient } from '@/lib/manychat-client';
 import { z } from 'zod';
 
 const ValidateQRSchema = z.object({
@@ -13,11 +14,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = ValidateQRSchema.parse(body);
 
-    // Find QR code
+    // Find QR code with tool and admin info
     const qrCode = await prisma.qRCode.findUnique({
       where: { code: validated.code },
       include: {
         user: true,
+        tool: {
+          include: {
+            admin: {
+              include: {
+                manychatConfig: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -74,17 +84,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Apply actions if requested and metadata contains action directives
-    if (validated.apply_actions && metadata) {
-      // Apply tags if specified (metadata can contain tag IDs to apply)
+    if (validated.apply_actions && metadata && qrCode.tool.admin.manychatConfig) {
+      const manychatClient = createManychatClient(qrCode.tool.admin.manychatConfig.apiToken);
+      const subscriberId = Number(qrCode.user.manychatId);
+
+      // Apply tags if specified
       if (metadata.apply_tags && Array.isArray(metadata.apply_tags)) {
-        // Note: This would require Manychat API call to apply tags
-        // For now, we log what would be applied
-        actionsApplied.tags = metadata.apply_tags;
+        const appliedTags: string[] = [];
+        for (const tagId of metadata.apply_tags) {
+          try {
+            await manychatClient.addTagToSubscriber(subscriberId, Number(tagId));
+            appliedTags.push(String(tagId));
+          } catch (error) {
+            console.error(`Failed to apply tag ${tagId}:`, error);
+          }
+        }
+        actionsApplied.tags = appliedTags;
       }
 
-      // Log custom field updates that should be made
+      // Apply custom field updates
       if (metadata.update_fields && typeof metadata.update_fields === 'object') {
-        actionsApplied.custom_fields = metadata.update_fields;
+        const updatedFields: Record<string, any> = {};
+        for (const [fieldId, fieldValue] of Object.entries(metadata.update_fields)) {
+          try {
+            await manychatClient.setCustomField(subscriberId, Number(fieldId), fieldValue);
+            updatedFields[fieldId] = fieldValue;
+          } catch (error) {
+            console.error(`Failed to update field ${fieldId}:`, error);
+          }
+        }
+        actionsApplied.custom_fields = updatedFields;
       }
     }
 

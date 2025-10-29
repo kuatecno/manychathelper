@@ -27,7 +27,7 @@ interface CustomField {
 interface MetadataEntry {
   key: string;
   value: string;
-  type: 'static' | 'tag' | 'custom_field' | 'system_field';
+  type: 'static' | 'custom_field' | 'system_field';
   fieldType?: string;
 }
 
@@ -95,6 +95,7 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<MetadataEntry[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]); // Array of tag IDs to apply
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
@@ -113,6 +114,27 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
             // Skip auto-generated fields
             return;
           }
+          if (key === 'apply_tags') {
+            // Extract tags array
+            if (Array.isArray(val)) {
+              setSelectedTags(val.map(String));
+            }
+            return;
+          }
+          if (key === 'update_fields') {
+            // Extract custom field updates
+            if (typeof val === 'object' && val !== null) {
+              Object.entries(val).forEach(([fieldId, fieldValue]) => {
+                newEntries.push({
+                  key: fieldId,
+                  value: String(fieldValue),
+                  type: 'custom_field',
+                });
+              });
+            }
+            return;
+          }
+          // Regular static fields
           newEntries.push({
             key,
             value: String(val),
@@ -130,9 +152,9 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
   }, [value]);
 
   useEffect(() => {
-    // Generate new metadata whenever entries change
+    // Generate new metadata whenever entries or tags change
     updateMetadata();
-  }, [entries, toolName, toolCode, campaignType]);
+  }, [entries, selectedTags, toolName, toolCode, campaignType]);
 
   const loadManychatData = async () => {
     try {
@@ -161,25 +183,43 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
       campaign_type: campaignType,
     };
 
-    // Add custom entries
-    entries.forEach(entry => {
-      if (entry.key) {
-        // Try to parse as number or boolean
-        let parsedValue: any = entry.value;
-        if (entry.value === 'true') parsedValue = true;
-        else if (entry.value === 'false') parsedValue = false;
-        else if (!isNaN(Number(entry.value)) && entry.value !== '') {
-          parsedValue = Number(entry.value);
-        }
+    // Add tags array if any selected
+    if (selectedTags.length > 0) {
+      metadata.apply_tags = selectedTags;
+    }
 
+    // Separate custom fields and static fields
+    const updateFields: Record<string, any> = {};
+
+    entries.forEach(entry => {
+      if (!entry.key) return;
+
+      // Try to parse as number or boolean
+      let parsedValue: any = entry.value;
+      if (entry.value === 'true') parsedValue = true;
+      else if (entry.value === 'false') parsedValue = false;
+      else if (!isNaN(Number(entry.value)) && entry.value !== '') {
+        parsedValue = Number(entry.value);
+      }
+
+      if (entry.type === 'custom_field') {
+        // Custom fields go in update_fields object
+        updateFields[entry.key] = parsedValue;
+      } else {
+        // Static and system fields go at root level
         metadata[entry.key] = parsedValue;
       }
     });
 
+    // Add update_fields if any exist
+    if (Object.keys(updateFields).length > 0) {
+      metadata.update_fields = updateFields;
+    }
+
     onChange(JSON.stringify(metadata, null, 2));
   };
 
-  const addEntry = (type: 'static' | 'tag' | 'custom_field' | 'system_field') => {
+  const addEntry = (type: 'static' | 'custom_field' | 'system_field') => {
     setEntries([
       ...entries,
       {
@@ -188,6 +228,14 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
         type,
       },
     ]);
+  };
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    );
   };
 
   const updateEntry = (index: number, field: keyof MetadataEntry, value: string) => {
@@ -280,6 +328,44 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
         </AlertDescription>
       </Alert>
 
+      {/* Tags Section */}
+      {tags.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Tag className="h-4 w-4" />
+              Tags to Apply When QR is Validated
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Select which tags should be automatically applied to the user when this QR code is scanned and validated
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2">
+              {tags.map((tag) => (
+                <label
+                  key={tag.id}
+                  className="flex items-center gap-2 p-2 rounded border cursor-pointer hover:bg-accent"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedTags.includes(tag.manychatTagId)}
+                    onChange={() => toggleTag(tag.manychatTagId)}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">{tag.name}</span>
+                </label>
+              ))}
+            </div>
+            {selectedTags.length > 0 && (
+              <div className="mt-3 pt-3 border-t text-xs text-muted-foreground">
+                {selectedTags.length} tag{selectedTags.length !== 1 ? 's' : ''} selected
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Add Buttons */}
       <div className="flex flex-wrap gap-2">
         <Button
@@ -300,17 +386,6 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
           <Settings2 className="mr-2 h-4 w-4" />
           Add System Field
         </Button>
-        {tags.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => addEntry('tag')}
-          >
-            <Tag className="mr-2 h-4 w-4" />
-            Add Tag Reference
-          </Button>
-        )}
         {customFields.length > 0 && (
           <Button
             type="button"
@@ -319,7 +394,7 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
             onClick={() => addEntry('custom_field')}
           >
             <FileText className="mr-2 h-4 w-4" />
-            Add Custom Field
+            Add Custom Field Update
           </Button>
         )}
       </div>
@@ -332,39 +407,16 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
               <div className="flex items-start gap-2">
                 <div className="flex-1 grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Key</Label>
-                    <Input
-                      placeholder="discount_percent"
-                      value={entry.key}
-                      onChange={(e) => updateEntry(index, 'key', e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs flex items-center gap-1">
-                      {getFieldIcon(entry.type)}
-                      Value
+                    <Label className="text-xs">
+                      {entry.type === 'custom_field' ? 'Field' : 'Key'}
                     </Label>
-                    {entry.type === 'tag' ? (
+                    {entry.type === 'custom_field' ? (
                       <Select
-                        value={entry.value}
-                        onValueChange={(val) => updateEntry(index, 'value', val)}
-                      >
-                        <SelectTrigger className="text-sm">
-                          <SelectValue placeholder="Select tag" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tags.map((tag) => (
-                            <SelectItem key={tag.id} value={tag.manychatTagId}>
-                              {tag.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : entry.type === 'custom_field' ? (
-                      <Select
-                        value={entry.value}
-                        onValueChange={(val) => updateEntry(index, 'value', val)}
+                        value={entry.key}
+                        onValueChange={(val) => {
+                          const field = customFields.find(f => f.manychatFieldId === val);
+                          updateEntry(index, 'key', val);
+                        }}
                       >
                         <SelectTrigger className="text-sm">
                           <SelectValue placeholder="Select field" />
@@ -377,7 +429,21 @@ export function MetadataBuilder({ value, onChange, toolName, toolCode, campaignT
                           ))}
                         </SelectContent>
                       </Select>
-                    ) : entry.type === 'system_field' ? (
+                    ) : (
+                      <Input
+                        placeholder="discount_percent"
+                        value={entry.key}
+                        onChange={(e) => updateEntry(index, 'key', e.target.value)}
+                        className="text-sm"
+                      />
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs flex items-center gap-1">
+                      {getFieldIcon(entry.type)}
+                      Value
+                    </Label>
+                    {entry.type === 'system_field' ? (
                       <Select
                         value={entry.value}
                         onValueChange={(val) => updateEntry(index, 'value', val)}
