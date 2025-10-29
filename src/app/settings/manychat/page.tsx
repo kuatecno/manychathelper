@@ -8,7 +8,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, AlertCircle, BookOpen } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Loader2, CheckCircle2, AlertCircle, BookOpen, Plus, Tag, FileText, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ManychatSettingsPage() {
@@ -29,6 +52,18 @@ export default function ManychatSettingsPage() {
   });
   const [testResult, setTestResult] = useState<any>(null);
   const [syncResult, setSyncResult] = useState<any>(null);
+
+  // Tag and field management
+  const [tags, setTags] = useState<any[]>([]);
+  const [customFields, setCustomFields] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [createFieldDialogOpen, setCreateFieldDialogOpen] = useState(false);
+  const [creatingField, setCreatingField] = useState(false);
+  const [newField, setNewField] = useState({
+    name: '',
+    type: 'text' as 'text' | 'number' | 'date' | 'datetime' | 'boolean' | 'array',
+    description: '',
+  });
 
   useEffect(() => {
     // Set webhook URL client-side only to avoid hydration error
@@ -56,6 +91,7 @@ export default function ManychatSettingsPage() {
     }
 
     loadConfig();
+    loadTagsAndFields();
   }, []);
 
   const loadConfig = async () => {
@@ -206,10 +242,79 @@ export default function ManychatSettingsPage() {
       setSyncResult({ type: 'fields', ...data });
       setSuccess(`Synced ${data.synced} custom fields successfully!`);
       setTimeout(() => setSuccess(''), 3000);
+
+      // Reload tags and fields
+      loadTagsAndFields();
     } catch (err) {
       setError('An error occurred while syncing custom fields');
     } finally {
       setSyncingFields(false);
+    }
+  };
+
+  const loadTagsAndFields = async () => {
+    setLoadingData(true);
+    try {
+      const adminStr = localStorage.getItem('admin');
+      if (!adminStr) return;
+
+      const admin = JSON.parse(adminStr);
+      const res = await fetch(`/api/admin/manychat-data?admin_id=${admin.id}`);
+
+      if (res.ok) {
+        const data = await res.json();
+        setTags(data.tags || []);
+        setCustomFields(data.customFields || []);
+      }
+    } catch (error) {
+      console.error('Failed to load tags and fields:', error);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  const handleCreateCustomField = async () => {
+    if (!newField.name.trim()) {
+      setError('Field name is required');
+      return;
+    }
+
+    setCreatingField(true);
+    setError('');
+
+    try {
+      const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+      const res = await fetch('/api/manychat/fields/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_id: admin.id,
+          name: newField.name,
+          type: newField.type,
+          description: newField.description || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to create custom field');
+        return;
+      }
+
+      setSuccess(`Custom field "${newField.name}" created successfully!`);
+      setTimeout(() => setSuccess(''), 3000);
+
+      // Reset form and close dialog
+      setNewField({ name: '', type: 'text', description: '' });
+      setCreateFieldDialogOpen(false);
+
+      // Reload fields
+      loadTagsAndFields();
+    } catch (err) {
+      setError('An error occurred while creating custom field');
+    } finally {
+      setCreatingField(false);
     }
   };
 
@@ -451,6 +556,199 @@ export default function ManychatSettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Tags Management */}
+      {config.apiToken && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Tag className="h-5 w-5" />
+              Tags Management
+            </CardTitle>
+            <CardDescription>
+              View and manage all synced tags from Manychat
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingData ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : tags.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Tag className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No tags synced yet</p>
+                <p className="text-sm">Click "Sync Tags" above to import tags from Manychat</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Manychat ID</TableHead>
+                    <TableHead>Created At</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tags.map((tag) => (
+                    <TableRow key={tag.id}>
+                      <TableCell className="font-medium">{tag.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{tag.manychatTagId}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(tag.createdAt).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Custom Fields Management */}
+      {config.apiToken && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Custom Fields Management
+                </CardTitle>
+                <CardDescription>
+                  View, create, and manage custom fields for storing contact data
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => setCreateFieldDialogOpen(true)}
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Field
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingData ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : customFields.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No custom fields yet</p>
+                <p className="text-sm">Click "Sync Custom Fields" above or create a new field</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Manychat ID</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Created At</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customFields.map((field) => (
+                    <TableRow key={field.id}>
+                      <TableCell className="font-medium">{field.name}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                          {field.type}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{field.manychatFieldId}</TableCell>
+                      <TableCell className="text-muted-foreground max-w-xs truncate">
+                        {field.description || '—'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(field.createdAt).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create Custom Field Dialog */}
+      <Dialog open={createFieldDialogOpen} onOpenChange={setCreateFieldDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Custom Field</DialogTitle>
+            <DialogDescription>
+              Create a new custom field in Manychat to store contact data
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="field-name">Field Name *</Label>
+              <Input
+                id="field-name"
+                value={newField.name}
+                onChange={(e) => setNewField({ ...newField, name: e.target.value })}
+                placeholder="e.g., Birthday, Favorite Color, Points"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="field-type">Field Type *</Label>
+              <Select
+                value={newField.type}
+                onValueChange={(value: any) => setNewField({ ...newField, type: value })}
+              >
+                <SelectTrigger id="field-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="datetime">Date & Time</SelectItem>
+                  <SelectItem value="boolean">Boolean (True/False)</SelectItem>
+                  <SelectItem value="array">Array (Multiple Values)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="field-description">Description (Optional)</Label>
+              <Input
+                id="field-description"
+                value={newField.description}
+                onChange={(e) => setNewField({ ...newField, description: e.target.value })}
+                placeholder="Brief description of this field"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCreateFieldDialogOpen(false);
+                setNewField({ name: '', type: 'text', description: '' });
+              }}
+              disabled={creatingField}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateCustomField}
+              disabled={creatingField || !newField.name.trim()}
+            >
+              {creatingField && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Field
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
