@@ -68,34 +68,56 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
   const [loading, setLoading] = useState(true);
   const [parts, setParts] = useState<FormatPart[]>([]);
   const [showRawPattern, setShowRawPattern] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     loadManychatData();
   }, []);
 
   useEffect(() => {
-    // Parse existing pattern into parts
-    if (value && value !== 'QR-{{id}}') {
-      parsePattern(value);
-    } else {
-      // Default pattern
-      setParts([
-        { type: 'static', value: 'QR-' },
-        { type: 'system_field', value: 'id', displayName: 'User ID' },
-      ]);
+    // Parse existing pattern into parts only if tags/customFields are loaded
+    if (!loading && tags && customFields) {
+      if (value && value !== 'QR-{{id}}') {
+        parsePattern(value);
+      } else if (parts.length === 0) {
+        // Default pattern - only set if parts is empty to avoid loops
+        setParts([
+          { type: 'static', value: 'QR-' },
+          { type: 'system_field', value: '{{id}}', displayName: 'User ID' },
+        ]);
+      }
     }
-  }, [value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, loading, tags?.length, customFields?.length]);
 
   useEffect(() => {
-    // Build pattern from parts
-    const pattern = parts.map(part => part.value).join('');
-    onChange(pattern);
+    // Build pattern from parts - prevent circular updates
+    if (parts.length > 0) {
+      const pattern = parts.map(part => part.value).join('');
+      if (pattern !== value) {
+        onChange(pattern);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [parts]);
 
   const loadManychatData = async () => {
     try {
+      // Check if we're in the browser before accessing localStorage
+      if (typeof window === 'undefined') {
+        setLoading(false);
+        return;
+      }
+
       const adminStr = localStorage.getItem('admin');
-      if (!adminStr) return;
+      if (!adminStr) {
+        setLoading(false);
+        return;
+      }
 
       const admin = JSON.parse(adminStr);
       const res = await fetch(`/api/admin/manychat-data?admin_id=${admin.id}`);
@@ -241,8 +263,8 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
     }
   };
 
-  if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading Manychat data...</div>;
+  if (!mounted || loading) {
+    return <div className="text-sm text-muted-foreground">Loading...</div>;
   }
 
   return (
@@ -443,22 +465,25 @@ export function QRCodeFormatBuilder({ value, onChange }: QRCodeFormatBuilderProp
       )}
 
       {/* Preview */}
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription className="text-sm">
-          <strong>Preview Pattern:</strong>
-          <div className="mt-2 font-mono text-xs bg-muted p-2 rounded break-all">
-            {parts.map(part => part.value).join('') || 'QR-{{id}}'}
-          </div>
-          <div className="mt-2 text-xs text-muted-foreground">
-            Example output: {parts.map(part => {
-              if (part.type === 'static') return part.value;
-              if (part.type === 'system_field') return part.displayName || 'value';
-              return `[${part.displayName || 'value'}]`;
-            }).join('') || 'QR-123456'}
-          </div>
-        </AlertDescription>
-      </Alert>
+      {parts.length > 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            <strong>Preview Pattern:</strong>
+            <div className="mt-2 font-mono text-xs bg-muted p-2 rounded break-all">
+              {parts.map(part => part.value).join('')}
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground">
+              Example output: {parts.map(part => {
+                if (part.type === 'static') return part.value;
+                if (part.type === 'system_field') return part.displayName || 'value';
+                if (part.type === 'random') return part.displayName?.match(/\((\d+)/)?.[1] ? 'x'.repeat(parseInt(part.displayName.match(/\((\d+)/)?.[1] || '6')) : 'xxxxxx';
+                return `[${part.displayName || 'value'}]`;
+              }).join('')}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Help Text */}
       {(tags.length === 0 && customFields.length === 0) && (
