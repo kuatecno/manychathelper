@@ -210,7 +210,7 @@ export default function ManychatInstructionsPage() {
                         <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
 {`{
   "tool_id": "${tool.id}",
-  "manychat_user_id": {{subscriber_id}},
+  "manychat_user_id": "{{user_id}}",
   "type": "promotion",
   "expires_in_days": 30,
   "metadata": {
@@ -220,14 +220,14 @@ export default function ManychatInstructionsPage() {
                         </pre>
                         <div className="absolute top-2 right-2">
                           <CopyButton
-                            text={`{\n  "tool_id": "${tool.id}",\n  "manychat_user_id": {{subscriber_id}},\n  "type": "promotion",\n  "expires_in_days": 30,\n  "metadata": {\n    "campaign": "your_campaign_name"\n  }\n}`}
+                            text={`{\n  "tool_id": "${tool.id}",\n  "manychat_user_id": "{{user_id}}",\n  "type": "promotion",\n  "expires_in_days": 30,\n  "metadata": {\n    "campaign": "your_campaign_name"\n  }\n}`}
                             id={`qr-body-${tool.id}`}
                           />
                         </div>
                       </div>
                       <Alert>
                         <AlertDescription className="text-sm">
-                          <strong>Important:</strong> Keep the double curly braces {'{{'} {'subscriber_id'} {'}} '}
+                          <strong>Important:</strong> Keep the double curly braces {'{{'} {'user_id'} {'}} '}
                           exactly as shown. Manychat will replace it automatically.
                         </AlertDescription>
                       </Alert>
@@ -401,7 +401,7 @@ export default function ManychatInstructionsPage() {
                         <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
 {`{
   "tool_id": "${tool.id}",
-  "manychat_user_id": {{subscriber_id}},
+  "manychat_user_id": "{{user_id}}",
   "start_time": {{selected_booking_time}},
   "duration": 30,
   "notes": "Optional notes"
@@ -409,7 +409,7 @@ export default function ManychatInstructionsPage() {
                         </pre>
                         <div className="absolute top-2 right-2">
                           <CopyButton
-                            text={`{\n  "tool_id": "${tool.id}",\n  "manychat_user_id": {{subscriber_id}},\n  "start_time": {{selected_booking_time}},\n  "duration": 30,\n  "notes": "Optional notes"\n}`}
+                            text={`{\n  "tool_id": "${tool.id}",\n  "manychat_user_id": "{{user_id}}",\n  "start_time": {{selected_booking_time}},\n  "duration": 30,\n  "notes": "Optional notes"\n}`}
                             id={`booking-create-body-${tool.id}`}
                           />
                         </div>
@@ -494,14 +494,14 @@ export default function ManychatInstructionsPage() {
                           <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-xs">
 {`{
   "tool_id": "${tool.id}",
-  "manychat_user_id": {{subscriber_id}},
+  "manychat_user_id": "{{user_id}}",
   "message": {{user_message}},
   "conversation_id": {{conversation_id}}
 }`}
                           </pre>
                           <div className="absolute top-2 right-2">
                             <CopyButton
-                              text={`{\n  "tool_id": "${tool.id}",\n  "manychat_user_id": {{subscriber_id}},\n  "message": {{user_message}},\n  "conversation_id": {{conversation_id}}\n}`}
+                              text={`{\n  "tool_id": "${tool.id}",\n  "manychat_user_id": "{{user_id}}",\n  "message": {{user_message}},\n  "conversation_id": {{conversation_id}}\n}`}
                               id={`ai-body-${tool.id}`}
                             />
                           </div>

@@ -48,7 +48,7 @@ export default function WebhookHelperPage() {
 
   const requestBody = `{
   "admin_id": "${adminId}",
-  "subscriber_id": {{subscriber_id}}
+  "subscriber_id": "{{user_id}}"
 }`;
 
   if (error) {
@@ -254,8 +254,8 @@ export default function WebhookHelperPage() {
               </div>
               <Alert>
                 <AlertDescription className="text-xs">
-                  <strong>Important:</strong> Keep the double curly braces {`{{subscriber_id}}`} exactly as shown.
-                  Manychat will automatically replace this with the actual subscriber ID.
+                  <strong>Important:</strong> Keep the double curly braces {`{{user_id}}`} exactly as shown.
+                  Manychat will automatically replace this with the actual user ID.
                 </AlertDescription>
               </Alert>
             </div>
