@@ -19,8 +19,10 @@ import {
   ArrowLeft,
   BarChart3,
   Users,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
+import { MetadataBuilder } from '@/components/MetadataBuilder';
 
 interface Tool {
   id: string;
@@ -49,6 +51,14 @@ interface Conversation {
   };
 }
 
+interface ChatConfig {
+  defaultContext: string;
+}
+
+const defaultChatConfig: ChatConfig = {
+  defaultContext: '{}',
+};
+
 export default function AIChatToolDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -68,6 +78,7 @@ export default function AIChatToolDetailPage() {
     description: '',
     isActive: true,
   });
+  const [configData, setConfigData] = useState<ChatConfig>(defaultChatConfig);
 
   useEffect(() => {
     const fetchToolData = async () => {
@@ -92,6 +103,19 @@ export default function AIChatToolDetailPage() {
           description: toolData.description || '',
           isActive: toolData.isActive,
         });
+
+        // Parse and set config
+        if (toolData.config) {
+          try {
+            const parsedConfig = typeof toolData.config === 'string'
+              ? JSON.parse(toolData.config)
+              : toolData.config;
+            setConfigData(parsedConfig);
+          } catch (e) {
+            console.error('Failed to parse tool config:', e);
+            setConfigData(defaultChatConfig);
+          }
+        }
 
         // Fetch conversations for this tool
         const conversationsResponse = await fetch(`/api/admin/tools/${toolId}/conversations?adminId=${admin.id}`);
@@ -124,6 +148,7 @@ export default function AIChatToolDetailPage() {
           name: formData.name,
           description: formData.description || null,
           isActive: formData.isActive,
+          config: JSON.stringify(configData),
         }),
       });
 
@@ -348,8 +373,8 @@ export default function AIChatToolDetailPage() {
         <TabsContent value="configuration" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tool Settings</CardTitle>
-              <CardDescription>Update your AI chat configuration</CardDescription>
+              <CardTitle>Basic Settings</CardTitle>
+              <CardDescription>Update tool name, description, and status</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -381,12 +406,47 @@ export default function AIChatToolDetailPage() {
                 />
                 <Label htmlFor="isActive">Active (allows new conversations)</Label>
               </div>
-              <Button onClick={handleSave} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Chat Configuration</CardTitle>
+              <CardDescription>
+                Configure default context and settings for AI conversations
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Default Context</Label>
+                <MetadataBuilder
+                  value={configData.defaultContext}
+                  onChange={(value) =>
+                    setConfigData({ ...configData, defaultContext: value })
+                  }
+                  toolName={formData.name}
+                  toolCode={formData.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '_')
+                    .replace(/-+/g, '_')
+                    .replace(/_+/g, '_')
+                    .trim()}
+                  campaignType="ai_chat"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Context data to include with each conversation. Can be overridden in Manychat request.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving...' : 'Save All Changes'}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Integration Tab */}

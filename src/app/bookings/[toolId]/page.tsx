@@ -20,9 +20,11 @@ import {
   Clock,
   BarChart3,
   Users,
+  Settings,
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { MetadataBuilder } from '@/components/MetadataBuilder';
 
 interface Tool {
   id: string;
@@ -51,6 +53,16 @@ interface Booking {
   };
 }
 
+interface BookingConfig {
+  allowNotes: boolean;
+  defaultMetadata: string;
+}
+
+const defaultBookingConfig: BookingConfig = {
+  allowNotes: true,
+  defaultMetadata: '{}',
+};
+
 export default function BookingToolDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -70,6 +82,7 @@ export default function BookingToolDetailPage() {
     description: '',
     isActive: true,
   });
+  const [configData, setConfigData] = useState<BookingConfig>(defaultBookingConfig);
 
   useEffect(() => {
     const fetchToolData = async () => {
@@ -94,6 +107,19 @@ export default function BookingToolDetailPage() {
           description: toolData.description || '',
           isActive: toolData.isActive,
         });
+
+        // Parse and set config
+        if (toolData.config) {
+          try {
+            const parsedConfig = typeof toolData.config === 'string'
+              ? JSON.parse(toolData.config)
+              : toolData.config;
+            setConfigData(parsedConfig);
+          } catch (e) {
+            console.error('Failed to parse tool config:', e);
+            setConfigData(defaultBookingConfig);
+          }
+        }
 
         // Fetch bookings for this tool
         const bookingsResponse = await fetch(`/api/admin/tools/${toolId}/bookings?adminId=${admin.id}`);
@@ -126,6 +152,7 @@ export default function BookingToolDetailPage() {
           name: formData.name,
           description: formData.description || null,
           isActive: formData.isActive,
+          config: JSON.stringify(configData),
         }),
       });
 
@@ -371,8 +398,8 @@ export default function BookingToolDetailPage() {
         <TabsContent value="configuration" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tool Settings</CardTitle>
-              <CardDescription>Update your booking system configuration</CardDescription>
+              <CardTitle>Basic Settings</CardTitle>
+              <CardDescription>Update tool name, description, and status</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -404,12 +431,63 @@ export default function BookingToolDetailPage() {
                 />
                 <Label htmlFor="isActive">Active (allows new bookings)</Label>
               </div>
-              <Button onClick={handleSave} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Booking Configuration</CardTitle>
+              <CardDescription>
+                Configure booking options and default data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="allowNotes"
+                  checked={configData.allowNotes}
+                  onChange={(e) => setConfigData({ ...configData, allowNotes: e.target.checked })}
+                  className="rounded"
+                />
+                <div>
+                  <Label htmlFor="allowNotes">Allow Notes</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow users to include notes when creating bookings
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Default Metadata</Label>
+                <MetadataBuilder
+                  value={configData.defaultMetadata}
+                  onChange={(value) =>
+                    setConfigData({ ...configData, defaultMetadata: value })
+                  }
+                  toolName={formData.name}
+                  toolCode={formData.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '_')
+                    .replace(/-+/g, '_')
+                    .replace(/_+/g, '_')
+                    .trim()}
+                  campaignType="booking"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Additional data to include with each booking. Can be overridden in Manychat request.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving...' : 'Save All Changes'}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Integration Tab */}

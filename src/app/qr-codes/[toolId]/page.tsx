@@ -11,6 +11,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   QrCode,
   AlertCircle,
   Save,
@@ -23,8 +30,11 @@ import {
   Code,
   List,
   Trash2,
+  Palette,
 } from 'lucide-react';
 import Link from 'next/link';
+import { MetadataBuilder } from '@/components/MetadataBuilder';
+import { QRCodeFormatBuilder } from '@/components/QRCodeFormatBuilder';
 
 interface Tool {
   id: string;
@@ -50,6 +60,48 @@ interface QRCode {
   maxUses: number | null;
 }
 
+interface QRConfig {
+  qrAppearance: {
+    width: number;
+    margin: number;
+    errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
+    darkColor: string;
+    lightColor: string;
+  };
+  qrFormat: {
+    prefix: string;
+    includeUserId: boolean;
+    includeTimestamp: boolean;
+    includeRandom: boolean;
+    customFormat: string;
+  };
+  qrCodeFormat?: string;
+  type: string;
+  expiresInDays: number | null;
+  defaultMetadata: string;
+}
+
+const defaultQRConfig: QRConfig = {
+  qrAppearance: {
+    width: 300,
+    margin: 2,
+    errorCorrectionLevel: 'H',
+    darkColor: '#000000',
+    lightColor: '#FFFFFF',
+  },
+  qrFormat: {
+    prefix: 'QR',
+    includeUserId: true,
+    includeTimestamp: true,
+    includeRandom: true,
+    customFormat: '{PREFIX}-{USER_ID}-{TIMESTAMP}-{RANDOM}',
+  },
+  qrCodeFormat: 'QR-{{id}}',
+  type: 'promotion',
+  expiresInDays: 30,
+  defaultMetadata: '{}',
+};
+
 export default function QRToolDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -69,6 +121,7 @@ export default function QRToolDetailPage() {
     description: '',
     isActive: true,
   });
+  const [configData, setConfigData] = useState<QRConfig>(defaultQRConfig);
 
   useEffect(() => {
     const fetchToolData = async () => {
@@ -93,6 +146,19 @@ export default function QRToolDetailPage() {
           description: toolData.description || '',
           isActive: toolData.isActive,
         });
+
+        // Parse and set config
+        if (toolData.config) {
+          try {
+            const parsedConfig = typeof toolData.config === 'string'
+              ? JSON.parse(toolData.config)
+              : toolData.config;
+            setConfigData(parsedConfig);
+          } catch (e) {
+            console.error('Failed to parse tool config:', e);
+            setConfigData(defaultQRConfig);
+          }
+        }
 
         // Fetch QR codes for this tool
         const qrResponse = await fetch(`/api/admin/tools/${toolId}/qrcodes?adminId=${admin.id}`);
@@ -125,6 +191,7 @@ export default function QRToolDetailPage() {
           name: formData.name,
           description: formData.description || null,
           isActive: formData.isActive,
+          config: JSON.stringify(configData),
         }),
       });
 
@@ -354,8 +421,8 @@ export default function QRToolDetailPage() {
         <TabsContent value="configuration" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Tool Settings</CardTitle>
-              <CardDescription>Update your QR code generator configuration</CardDescription>
+              <CardTitle>Basic Settings</CardTitle>
+              <CardDescription>Update tool name, description, and status</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -387,12 +454,251 @@ export default function QRToolDetailPage() {
                 />
                 <Label htmlFor="isActive">Active (allows new QR code generation)</Label>
               </div>
-              <Button onClick={handleSave} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>QR Code Configuration</CardTitle>
+              <CardDescription>
+                Configure appearance, format, and campaign settings for this QR generator
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="appearance" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="appearance">
+                    <Palette className="mr-2 h-4 w-4" />
+                    Appearance
+                  </TabsTrigger>
+                  <TabsTrigger value="format">
+                    <Code className="mr-2 h-4 w-4" />
+                    Format
+                  </TabsTrigger>
+                  <TabsTrigger value="campaign">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Content
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Appearance Tab */}
+                <TabsContent value="appearance" className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="width">Size (pixels)</Label>
+                      <Input
+                        id="width"
+                        type="number"
+                        value={configData.qrAppearance.width}
+                        onChange={(e) =>
+                          setConfigData({
+                            ...configData,
+                            qrAppearance: {
+                              ...configData.qrAppearance,
+                              width: parseInt(e.target.value),
+                            },
+                          })
+                        }
+                        min={100}
+                        max={1000}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="margin">Margin</Label>
+                      <Input
+                        id="margin"
+                        type="number"
+                        value={configData.qrAppearance.margin}
+                        onChange={(e) =>
+                          setConfigData({
+                            ...configData,
+                            qrAppearance: {
+                              ...configData.qrAppearance,
+                              margin: parseInt(e.target.value),
+                            },
+                          })
+                        }
+                        min={0}
+                        max={10}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="darkColor">QR Color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="darkColor"
+                          type="color"
+                          value={configData.qrAppearance.darkColor}
+                          onChange={(e) =>
+                            setConfigData({
+                              ...configData,
+                              qrAppearance: {
+                                ...configData.qrAppearance,
+                                darkColor: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-20"
+                        />
+                        <Input
+                          type="text"
+                          value={configData.qrAppearance.darkColor}
+                          onChange={(e) =>
+                            setConfigData({
+                              ...configData,
+                              qrAppearance: {
+                                ...configData.qrAppearance,
+                                darkColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="lightColor">Background Color</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="lightColor"
+                          type="color"
+                          value={configData.qrAppearance.lightColor}
+                          onChange={(e) =>
+                            setConfigData({
+                              ...configData,
+                              qrAppearance: {
+                                ...configData.qrAppearance,
+                                lightColor: e.target.value,
+                              },
+                            })
+                          }
+                          className="w-20"
+                        />
+                        <Input
+                          type="text"
+                          value={configData.qrAppearance.lightColor}
+                          onChange={(e) =>
+                            setConfigData({
+                              ...configData,
+                              qrAppearance: {
+                                ...configData.qrAppearance,
+                                lightColor: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="errorCorrection">Error Correction</Label>
+                      <select
+                        id="errorCorrection"
+                        value={configData.qrAppearance.errorCorrectionLevel}
+                        onChange={(e) =>
+                          setConfigData({
+                            ...configData,
+                            qrAppearance: {
+                              ...configData.qrAppearance,
+                              errorCorrectionLevel: e.target.value as 'L' | 'M' | 'Q' | 'H',
+                            },
+                          })
+                        }
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="L">Low (7%)</option>
+                        <option value="M">Medium (15%)</option>
+                        <option value="Q">Quartile (25%)</option>
+                        <option value="H">High (30%)</option>
+                      </select>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Format Tab */}
+                <TabsContent value="format" className="space-y-4">
+                  <QRCodeFormatBuilder
+                    value={configData.qrCodeFormat || 'QR-{{id}}'}
+                    onChange={(value) =>
+                      setConfigData({ ...configData, qrCodeFormat: value })
+                    }
+                  />
+                </TabsContent>
+
+                {/* Campaign Tab */}
+                <TabsContent value="campaign" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="qrType">Default Type</Label>
+                    <Select
+                      value={configData.type}
+                      onValueChange={(value) =>
+                        setConfigData({ ...configData, type: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="promotion">Promotion</SelectItem>
+                        <SelectItem value="discount">Discount</SelectItem>
+                        <SelectItem value="validation">Validation</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Can be overridden in Manychat request
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="expiresInDays">Default Expiration (days)</Label>
+                    <Input
+                      id="expiresInDays"
+                      type="number"
+                      value={configData.expiresInDays || ''}
+                      onChange={(e) =>
+                        setConfigData({
+                          ...configData,
+                          expiresInDays: e.target.value ? parseInt(e.target.value) : null,
+                        })
+                      }
+                      placeholder="Leave empty for no expiration"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Can be overridden in Manychat request
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Validation Data (returned when QR is scanned)</Label>
+                    <MetadataBuilder
+                      value={configData.defaultMetadata}
+                      onChange={(value) =>
+                        setConfigData({ ...configData, defaultMetadata: value })
+                      }
+                      toolName={formData.name}
+                      toolCode={formData.name
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/\s+/g, '_')
+                        .replace(/-+/g, '_')
+                        .replace(/_+/g, '_')
+                        .trim()}
+                      campaignType={configData.type}
+                    />
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving...' : 'Save All Changes'}
+            </Button>
+          </div>
         </TabsContent>
 
         {/* Integration Tab */}
