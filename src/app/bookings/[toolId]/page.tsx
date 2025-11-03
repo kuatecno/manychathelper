@@ -202,13 +202,26 @@ export default function BookingToolDetailPage() {
     );
   }
 
-  const integrationExample = `{
-  "tool_id": "${tool.id}",
-  "manychat_user_id": "{{user_id}}",
-  "start_time": "{{booking_start}}",
-  "end_time": "{{booking_end}}",
-  "notes": "{{booking_notes}}"
-}`;
+  // Generate campaign slug from tool name
+  const toolSlug = tool.name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/_+/g, '_')
+    .trim();
+
+  const integrationExample = JSON.stringify({
+    tool_id: tool.id,
+    manychat_user_id: "{{user_id}}",
+    start_time: "{{booking_start}}",
+    end_time: "{{booking_end}}",
+    notes: "{{booking_notes}}",
+    metadata: {
+      booking_type: toolSlug,
+      tool_name: tool.name,
+    },
+  }, null, 2);
 
   return (
     <div className="space-y-6">

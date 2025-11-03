@@ -186,15 +186,31 @@ export default function QRToolDetailPage() {
     );
   }
 
-  const integrationExample = `{
-  "tool_id": "${tool.id}",
-  "manychat_user_id": "{{user_id}}",
-  "type": "promotion",
-  "expires_in_days": 30,
-  "metadata": {
-    "campaign": "your_campaign_name"
-  }
-}`;
+  // Generate campaign slug from tool name
+  const campaignSlug = tool.name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/_+/g, '_')
+    .trim();
+
+  // Build integration example dynamically
+  const exampleObj: any = {
+    tool_id: tool.id,
+    manychat_user_id: "{{user_id}}",
+    type: "promotion",
+  };
+
+  // Only add expires_in_days if you want expiration (optional)
+  // exampleObj.expires_in_days = 30;
+
+  exampleObj.metadata = {
+    campaign: campaignSlug,
+    tool_name: tool.name,
+  };
+
+  const integrationExample = JSON.stringify(exampleObj, null, 2);
 
   return (
     <div className="space-y-6">
@@ -415,6 +431,13 @@ export default function QRToolDetailPage() {
                 <AlertDescription className="text-xs">
                   <strong>Important:</strong> Keep the double curly braces {`"{{user_id}}"`} exactly as shown.
                   Manychat will automatically replace this with the actual user ID.
+                  <br /><br />
+                  <strong>Optional fields you can add:</strong>
+                  <ul className="list-disc list-inside mt-1">
+                    <li><code>"expires_in_days": 30</code> - Set QR code expiration</li>
+                    <li><code>"max_uses": 1</code> - Limit number of scans</li>
+                    <li>Add any custom data to <code>metadata</code></li>
+                  </ul>
                 </AlertDescription>
               </Alert>
             </CardContent>
