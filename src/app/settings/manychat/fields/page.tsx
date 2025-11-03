@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CheckCircle2, AlertCircle, FileText, ArrowLeft, Plus, RefreshCw, Edit2, Save, X } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, FileText, ArrowLeft, Plus, RefreshCw, Edit2, Save, X, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CustomFieldsManagementPage() {
@@ -50,6 +50,9 @@ export default function CustomFieldsManagementPage() {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{ name: string; description: string }>({ name: '', description: '' });
   const [savingFieldId, setSavingFieldId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [fieldToDelete, setFieldToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
 
   const formatDate = (date: any) => {
     if (!date) return '—';
@@ -233,6 +236,50 @@ export default function CustomFieldsManagementPage() {
     }
   };
 
+  const handleDeleteClick = (field: any) => {
+    setFieldToDelete({ id: field.id, name: field.name });
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!fieldToDelete) return;
+
+    setDeletingFieldId(fieldToDelete.id);
+    setError('');
+
+    try {
+      const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+      const res = await fetch('/api/manychat/fields/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_id: admin.id,
+          field_id: fieldToDelete.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to delete custom field');
+        return;
+      }
+
+      setSuccess(`Custom field "${fieldToDelete.name}" deleted successfully!`);
+      setTimeout(() => setSuccess(''), 3000);
+
+      setDeleteConfirmOpen(false);
+      setFieldToDelete(null);
+
+      // Reload fields
+      loadCustomFields();
+    } catch (err) {
+      setError('An error occurred while deleting custom field');
+    } finally {
+      setDeletingFieldId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -409,13 +456,23 @@ export default function CustomFieldsManagementPage() {
                               </Button>
                             </div>
                           ) : (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleStartEdit(field)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleStartEdit(field)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteClick(field)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
@@ -526,6 +583,48 @@ export default function CustomFieldsManagementPage() {
             >
               {creatingField && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Field
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Custom Field</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the custom field "{fieldToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Warning: This will only remove the field from your local database. The field will still exist in Manychat.
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setFieldToDelete(null);
+              }}
+              disabled={deletingFieldId !== null}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deletingFieldId !== null}
+            >
+              {deletingFieldId !== null && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Field
             </Button>
           </DialogFooter>
         </DialogContent>

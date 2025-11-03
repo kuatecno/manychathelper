@@ -7,6 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Table,
   TableBody,
   TableCell,
@@ -14,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CheckCircle2, AlertCircle, Tag, ArrowLeft, RefreshCw, Edit2, Save, X } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Tag, ArrowLeft, RefreshCw, Edit2, Save, X, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TagsManagementPage() {
@@ -27,6 +35,9 @@ export default function TagsManagementPage() {
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [savingTagId, setSavingTagId] = useState<string | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
 
   const formatDate = (date: any) => {
     if (!date) return '—';
@@ -158,6 +169,50 @@ export default function TagsManagementPage() {
       setError('An error occurred while updating tag');
     } finally {
       setSavingTagId(null);
+    }
+  };
+
+  const handleDeleteClick = (tag: any) => {
+    setTagToDelete({ id: tag.id, name: tag.name });
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!tagToDelete) return;
+
+    setDeletingTagId(tagToDelete.id);
+    setError('');
+
+    try {
+      const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+      const res = await fetch('/api/manychat/tags/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_id: admin.id,
+          tag_id: tagToDelete.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to delete tag');
+        return;
+      }
+
+      setSuccess(`Tag "${tagToDelete.name}" deleted successfully!`);
+      setTimeout(() => setSuccess(''), 3000);
+
+      setDeleteConfirmOpen(false);
+      setTagToDelete(null);
+
+      // Reload tags
+      loadTags();
+    } catch (err) {
+      setError('An error occurred while deleting tag');
+    } finally {
+      setDeletingTagId(null);
     }
   };
 
@@ -302,13 +357,23 @@ export default function TagsManagementPage() {
                               </Button>
                             </div>
                           ) : (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleStartEdit(tag)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleStartEdit(tag)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteClick(tag)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
                         </TableCell>
                       </TableRow>
@@ -337,6 +402,48 @@ export default function TagsManagementPage() {
           </p>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Tag</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the tag "{tagToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Warning: This will only remove the tag from your local database. The tag will still exist in Manychat.
+              </AlertDescription>
+            </Alert>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setTagToDelete(null);
+              }}
+              disabled={deletingTagId !== null}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deletingTagId !== null}
+            >
+              {deletingTagId !== null && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete Tag
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
