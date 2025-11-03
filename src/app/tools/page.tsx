@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -123,6 +124,7 @@ const generateDefaultMetadata = (
 };
 
 export default function ToolsPage() {
+  const router = useRouter();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -162,7 +164,14 @@ export default function ToolsPage() {
 
   const fetchTools = async () => {
     try {
-      const res = await fetch('/api/admin/tools');
+      const adminStr = localStorage.getItem('admin');
+      if (!adminStr) {
+        router.push('/login');
+        return;
+      }
+
+      const admin = JSON.parse(adminStr);
+      const res = await fetch(`/api/admin/tools?adminId=${admin.id}`);
       const data = await res.json();
       setTools(data.tools || []);
     } catch (error) {
