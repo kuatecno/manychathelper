@@ -32,6 +32,7 @@ interface Tool {
   description: string | null;
   type: string;
   isActive: boolean;
+  config: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -186,6 +187,16 @@ export default function QRToolDetailPage() {
     );
   }
 
+  // Parse tool config to get QR settings
+  let qrConfig: any = {};
+  try {
+    if (tool.config) {
+      qrConfig = typeof tool.config === 'string' ? JSON.parse(tool.config) : tool.config;
+    }
+  } catch (e) {
+    console.error('Failed to parse tool config:', e);
+  }
+
   // Generate campaign slug from tool name
   const campaignSlug = tool.name
     .toLowerCase()
@@ -195,20 +206,36 @@ export default function QRToolDetailPage() {
     .replace(/_+/g, '_')
     .trim();
 
-  // Build integration example dynamically
+  // Build integration example with ALL configured settings
   const exampleObj: any = {
     tool_id: tool.id,
     manychat_user_id: "{{user_id}}",
-    type: "promotion",
+    type: qrConfig.type || "promotion",
   };
 
-  // Only add expires_in_days if you want expiration (optional)
-  // exampleObj.expires_in_days = 30;
+  // Add expires_in_days if configured
+  if (qrConfig.expiresInDays) {
+    exampleObj.expires_in_days = qrConfig.expiresInDays;
+  }
 
-  exampleObj.metadata = {
+  // Parse and merge default metadata from config
+  let defaultMeta: any = {
     campaign: campaignSlug,
     tool_name: tool.name,
   };
+
+  if (qrConfig.defaultMetadata) {
+    try {
+      const configMeta = typeof qrConfig.defaultMetadata === 'string'
+        ? JSON.parse(qrConfig.defaultMetadata)
+        : qrConfig.defaultMetadata;
+      defaultMeta = { ...defaultMeta, ...configMeta };
+    } catch (e) {
+      console.error('Failed to parse default metadata:', e);
+    }
+  }
+
+  exampleObj.metadata = defaultMeta;
 
   const integrationExample = JSON.stringify(exampleObj, null, 2);
 
@@ -370,56 +397,32 @@ export default function QRToolDetailPage() {
 
         {/* Integration Tab */}
         <TabsContent value="integration" className="space-y-4">
-          <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-900/20">
-            <AlertDescription className="text-blue-800 dark:text-blue-200">
-              Use this tool ID in your Manychat automation to generate QR codes specific to this tool.
-            </AlertDescription>
-          </Alert>
-
           <Card>
             <CardHeader>
-              <CardTitle>Tool ID</CardTitle>
-              <CardDescription>Use this ID in your API requests</CardDescription>
-            </CardHeader>
-            <CardContent>
               <div className="flex items-center gap-2">
-                <div className="flex-1 rounded-lg bg-muted p-3 font-mono text-sm break-all">
-                  {tool.id}
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
+                  1
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => copyToClipboard(tool.id, 'toolId')}
-                >
-                  {copied === 'toolId' ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
+                <CardTitle>Generate QR Code in Manychat</CardTitle>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Manychat Integration Example</CardTitle>
               <CardDescription>
-                Use this JSON in your External Request action to generate QR codes
+                Add "External Request" action with these settings:
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex items-start gap-2">
-                  <pre className="flex-1 rounded-lg bg-muted p-3 font-mono text-sm overflow-x-auto">
-{integrationExample}
-                  </pre>
+            <CardContent className="space-y-6">
+              {/* Request Method */}
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Request Method</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg bg-muted p-3 font-mono text-sm">
+                    POST
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(integrationExample, 'example')}
+                    onClick={() => copyToClipboard('POST', 'method')}
                   >
-                    {copied === 'example' ? (
+                    {copied === 'method' ? (
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
                     ) : (
                       <Copy className="h-4 w-4" />
@@ -427,17 +430,74 @@ export default function QRToolDetailPage() {
                   </Button>
                 </div>
               </div>
+
+              {/* Request URL */}
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Request URL</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 rounded-lg bg-muted p-3 font-mono text-sm break-all">
+                    {window.location.origin}/api/qr/generate
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(`${window.location.origin}/api/qr/generate`, 'url')}
+                  >
+                    {copied === 'url' ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Header */}
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Header</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Key:</Label>
+                    <div className="rounded-lg bg-muted p-2 font-mono text-sm mt-1">
+                      Content-Type
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Value:</Label>
+                    <div className="rounded-lg bg-muted p-2 font-mono text-sm mt-1">
+                      application/json
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Request Body */}
+              <div className="space-y-2">
+                <Label className="text-base font-semibold">Request Body (JSON)</Label>
+                <div className="flex items-start gap-2">
+                  <pre className="flex-1 rounded-lg bg-muted p-3 font-mono text-sm overflow-x-auto">
+{integrationExample}
+                  </pre>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyToClipboard(integrationExample, 'body')}
+                  >
+                    {copied === 'body' ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Important Note */}
               <Alert>
-                <AlertDescription className="text-xs">
-                  <strong>Important:</strong> Keep the double curly braces {`"{{user_id}}"`} exactly as shown.
-                  Manychat will automatically replace this with the actual user ID.
-                  <br /><br />
-                  <strong>Optional fields you can add:</strong>
-                  <ul className="list-disc list-inside mt-1">
-                    <li><code>"expires_in_days": 30</code> - Set QR code expiration</li>
-                    <li><code>"max_uses": 1</code> - Limit number of scans</li>
-                    <li>Add any custom data to <code>metadata</code></li>
-                  </ul>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Important:</strong> Keep the double curly braces {`{{user_id}}`} exactly as shown.
+                  Manychat will replace it automatically.
                 </AlertDescription>
               </Alert>
             </CardContent>
