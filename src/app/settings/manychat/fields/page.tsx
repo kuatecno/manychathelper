@@ -48,6 +48,17 @@ export default function CustomFieldsManagementPage() {
     description: '',
   });
 
+  const formatDate = (date: any) => {
+    if (!date) return '—';
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleString();
+    } catch {
+      return '—';
+    }
+  };
+
   useEffect(() => {
     // Validate admin
     const adminStr = localStorage.getItem('admin');
@@ -286,10 +297,10 @@ export default function CustomFieldsManagementPage() {
                         {field.description || '—'}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(field.createdAt).toLocaleString()}
+                        {formatDate(field.createdAt)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(field.updatedAt).toLocaleString()}
+                        {formatDate(field.updatedAt)}
                       </TableCell>
                     </TableRow>
                   ))}

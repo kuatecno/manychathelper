@@ -24,6 +24,17 @@ export default function TagsManagementPage() {
   const [success, setSuccess] = useState('');
   const [tags, setTags] = useState<any[]>([]);
 
+  const formatDate = (date: any) => {
+    if (!date) return '—';
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleString();
+    } catch {
+      return '—';
+    }
+  };
+
   useEffect(() => {
     // Validate admin
     const adminStr = localStorage.getItem('admin');
@@ -191,10 +202,10 @@ export default function TagsManagementPage() {
                         {tag.manychatTagId}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(tag.createdAt).toLocaleString()}
+                        {formatDate(tag.createdAt)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {new Date(tag.updatedAt).toLocaleString()}
+                        {formatDate(tag.updatedAt)}
                       </TableCell>
                     </TableRow>
                   ))}
