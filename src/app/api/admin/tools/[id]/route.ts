@@ -3,10 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const UpdateToolSchema = z.object({
+  adminId: z.string().optional(),
   name: z.string().min(1).optional(),
   type: z.string().min(1).optional(),
   description: z.string().optional().nullable(),
   active: z.boolean().optional(),
+  isActive: z.boolean().optional(),
   config: z.string().optional().nullable(),
   manychatFlowId: z.string().optional().nullable(),
 });
@@ -17,27 +19,46 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const adminId = searchParams.get('adminId');
 
     const tool = await prisma.tool.findUnique({
       where: { id },
+      include: {
+        _count: {
+          select: {
+            bookings: true,
+            qrCodes: true,
+            conversations: true,
+          },
+        },
+      },
     });
 
     if (!tool) {
       return NextResponse.json({ error: 'Tool not found' }, { status: 404 });
     }
 
+    // Verify ownership if adminId is provided
+    if (adminId && tool.adminId !== adminId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     return NextResponse.json({
-      success: true,
-      tool: {
-        id: tool.id,
-        name: tool.name,
-        type: tool.type,
-        description: tool.description,
-        active: tool.active,
-        config: tool.config,
-        manychatFlowId: tool.manychatFlowId,
-        createdAt: tool.createdAt.toISOString(),
-        updatedAt: tool.updatedAt.toISOString(),
+      id: tool.id,
+      name: tool.name,
+      type: tool.type,
+      description: tool.description,
+      active: tool.active,
+      isActive: tool.active,
+      config: tool.config,
+      manychatFlowId: tool.manychatFlowId,
+      createdAt: tool.createdAt.toISOString(),
+      updatedAt: tool.updatedAt.toISOString(),
+      _count: {
+        bookings: tool._count.bookings,
+        qrCodes: tool._count.qrCodes,
+        conversations: tool._count.conversations,
       },
     });
   } catch (error) {
@@ -55,20 +76,44 @@ export async function PUT(
     const body = await request.json();
     const validated = UpdateToolSchema.parse(body);
 
+    // Verify ownership if adminId is provided
+    if (validated.adminId) {
+      const existingTool = await prisma.tool.findUnique({
+        where: { id },
+        select: { adminId: true },
+      });
+
+      if (!existingTool) {
+        return NextResponse.json({ error: 'Tool not found' }, { status: 404 });
+      }
+
+      if (existingTool.adminId !== validated.adminId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+      }
+    }
+
+    // Map isActive to active if provided
+    const updateData: any = { ...validated };
+    if (validated.isActive !== undefined) {
+      updateData.active = validated.isActive;
+      delete updateData.isActive;
+    }
+    delete updateData.adminId; // Don't update adminId
+
     const tool = await prisma.tool.update({
       where: { id },
-      data: validated,
+      data: updateData,
     });
 
     return NextResponse.json({
-      success: true,
-      tool: {
-        id: tool.id,
-        name: tool.name,
-        type: tool.type,
-        description: tool.description,
-        active: tool.active,
-      },
+      id: tool.id,
+      name: tool.name,
+      type: tool.type,
+      description: tool.description,
+      active: tool.active,
+      isActive: tool.active,
+      createdAt: tool.createdAt.toISOString(),
+      updatedAt: tool.updatedAt.toISOString(),
     });
   } catch (error) {
     console.error('Error updating tool:', error);

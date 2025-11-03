@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
   LogOut,
+  MessageSquare,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,8 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Tools', href: '/tools', icon: Wrench },
   { name: 'Bookings', href: '/bookings', icon: Calendar },
-  { name: 'QR Codes', href: '/qr', icon: QrCode },
+  { name: 'QR Codes', href: '/qr-codes', icon: QrCode },
+  { name: 'AI Chat', href: '/ai-chat', icon: MessageSquare },
   { name: 'Contacts', href: '/users', icon: UserCircle },
   { name: 'Settings', href: '/settings/manychat', icon: Settings },
 ];

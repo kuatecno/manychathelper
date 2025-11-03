@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Plus, AlertCircle, ExternalLink } from 'lucide-react';
+import { MessageSquare, Plus, AlertCircle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 
 interface Tool {
@@ -16,11 +16,11 @@ interface Tool {
   isActive: boolean;
   createdAt: string;
   _count?: {
-    bookings: number;
+    conversations: number;
   };
 }
 
-export default function BookingsPage() {
+export default function AIChatPage() {
   const router = useRouter();
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,10 +36,10 @@ export default function BookingsPage() {
 
       try {
         const admin = JSON.parse(adminStr);
-        const response = await fetch(`/api/admin/tools?adminId=${admin.id}&type=booking`);
+        const response = await fetch(`/api/admin/tools?adminId=${admin.id}&type=ai_chat`);
 
         if (!response.ok) {
-          throw new Error('Failed to fetch booking tools');
+          throw new Error('Failed to fetch AI chat tools');
         }
 
         const data = await response.json();
@@ -55,7 +55,7 @@ export default function BookingsPage() {
   }, [router]);
 
   if (loading) {
-    return <div className="text-muted-foreground">Loading booking tools...</div>;
+    return <div className="text-muted-foreground">Loading AI chat tools...</div>;
   }
 
   if (error) {
@@ -73,17 +73,17 @@ export default function BookingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Calendar className="h-8 w-8" />
-            Booking Systems
+            <MessageSquare className="h-8 w-8" />
+            AI Chat Systems
           </h1>
           <p className="text-muted-foreground mt-2">
-            Manage your booking tools and appointments
+            Manage your AI-powered chat tools and conversations
           </p>
         </div>
-        <Link href="/tools?create=booking">
+        <Link href="/tools?create=ai_chat">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
-            New Booking System
+            New AI Chat
           </Button>
         </Link>
       </div>
@@ -92,15 +92,15 @@ export default function BookingsPage() {
       {tools.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Booking Tools Yet</h3>
+            <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No AI Chat Tools Yet</h3>
             <p className="text-muted-foreground text-center mb-4">
-              Create your first booking tool to start accepting appointments through Manychat
+              Create your first AI chat tool to enable intelligent conversations in your Manychat bot
             </p>
-            <Link href="/tools?create=booking">
+            <Link href="/tools?create=ai_chat">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Booking System
+                Create AI Chat
               </Button>
             </Link>
           </CardContent>
@@ -108,12 +108,12 @@ export default function BookingsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tools.map((tool) => (
-            <Link key={tool.id} href={`/bookings/${tool.id}`}>
+            <Link key={tool.id} href={`/ai-chat/${tool.id}`}>
               <Card className="cursor-pointer hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-5 w-5 text-primary" />
+                      <MessageSquare className="h-5 w-5 text-primary" />
                       <CardTitle className="text-lg">{tool.name}</CardTitle>
                     </div>
                     {!tool.isActive && (
@@ -131,7 +131,7 @@ export default function BookingsPage() {
                 <CardContent>
                   <div className="flex items-center justify-between text-sm">
                     <div className="text-muted-foreground">
-                      {tool._count?.bookings || 0} appointments
+                      {tool._count?.conversations || 0} conversations
                     </div>
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </div>
@@ -145,15 +145,15 @@ export default function BookingsPage() {
       {/* Help Card */}
       <Card className="border-blue-500 bg-blue-50 dark:bg-blue-900/20">
         <CardHeader>
-          <CardTitle className="text-blue-800 dark:text-blue-200">About Booking Systems</CardTitle>
+          <CardTitle className="text-blue-800 dark:text-blue-200">About AI Chat Systems</CardTitle>
         </CardHeader>
         <CardContent className="text-blue-800 dark:text-blue-200 space-y-2">
           <p>
-            Booking system tools allow users to schedule appointments directly through your Manychat bot.
+            AI chat tools enable intelligent, context-aware conversations with your Manychat bot users.
           </p>
           <p>
-            Each tool can manage multiple bookings with custom time slots, availability settings, and
-            confirmation workflows. Perfect for consultations, service appointments, or event registrations.
+            Each tool can maintain conversation history, understand user intent, and provide relevant
+            responses. Perfect for customer support, product recommendations, or interactive assistance.
           </p>
         </CardContent>
       </Card>

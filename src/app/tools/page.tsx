@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, Wrench, Palette, Code, Settings, BookOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wrench, Palette, Code, Settings, BookOpen, QrCode, Calendar, MessageSquare, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { MetadataBuilder } from '@/components/MetadataBuilder';
@@ -621,6 +621,60 @@ export default function ToolsPage() {
         </div>
       </div>
 
+      {/* Type Grouping Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Link href="/qr-codes">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">QR Generators</CardTitle>
+              <QrCode className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {tools.filter(t => t.type === 'qr_generator').length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                View all QR code tools →
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/bookings">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Booking Systems</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {tools.filter(t => t.type === 'booking').length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                View all booking tools →
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/ai-chat">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">AI Chat</CardTitle>
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {tools.filter(t => t.type === 'ai_chat').length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                View all AI chat tools →
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -665,6 +719,20 @@ export default function ToolsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {(tool.type === 'qr_generator' || tool.type === 'booking' || tool.type === 'ai_chat') && (
+                          <Link
+                            href={
+                              tool.type === 'qr_generator' ? `/qr-codes/${tool.id}` :
+                              tool.type === 'booking' ? `/bookings/${tool.id}` :
+                              `/ai-chat/${tool.id}`
+                            }
+                          >
+                            <Button variant="outline" size="sm">
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </Link>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
