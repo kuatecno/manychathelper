@@ -78,8 +78,29 @@ export async function POST(request: NextRequest) {
         let tags: Array<{ manychatTagId: string; name: string }> = [];
         let customFields: Array<{ manychatFieldId: string; name: string; value?: any }> = [];
 
-        // Fetch Manychat data if API token is available
-        if (tool.admin.manychatConfig?.apiToken) {
+        // Check if subscriber_data was provided directly in the request
+        if (validated.subscriber_data) {
+          // Use subscriber data from request (from {{subscriber_data|to_json:true}})
+          manychatSubscriber = validated.subscriber_data;
+
+          // Extract tags from subscriber if present
+          if (manychatSubscriber.tags) {
+            tags = manychatSubscriber.tags.map((tag: any) => ({
+              manychatTagId: String(tag.id),
+              name: tag.name,
+            }));
+          }
+
+          // Extract custom fields from subscriber if present
+          if (manychatSubscriber.custom_fields) {
+            customFields = manychatSubscriber.custom_fields.map((field: any) => ({
+              manychatFieldId: String(field.id),
+              name: field.name,
+              value: field.value,
+            }));
+          }
+        } else if (tool.admin.manychatConfig?.apiToken) {
+          // Fallback: Fetch Manychat data if API token is available
           const manychatClient = createManychatClient(tool.admin.manychatConfig.apiToken);
 
           // Get subscriber info

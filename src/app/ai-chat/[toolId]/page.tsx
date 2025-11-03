@@ -234,6 +234,7 @@ export default function AIChatToolDetailPage() {
   const exampleObj: any = {
     tool_id: tool.id,
     manychat_user_id: "{{user_id}}",
+    subscriber_data: "{{subscriber_data|to_json:true}}",
     message: "{{user_message}}",
   };
 
@@ -256,7 +257,18 @@ export default function AIChatToolDetailPage() {
 
   exampleObj.context = contextObj;
 
-  const integrationExample = JSON.stringify(exampleObj, null, 2);
+  // Format with special handling for subscriber_data to avoid double-stringification
+  const { subscriber_data, ...rest } = exampleObj;
+  const formattedExample = JSON.stringify(rest, null, 2);
+
+  // Insert subscriber_data line after manychat_user_id
+  const lines = formattedExample.split('\n');
+  const userIdIndex = lines.findIndex(line => line.includes('"manychat_user_id"'));
+  if (userIdIndex !== -1) {
+    lines.splice(userIdIndex + 1, 0, `  "subscriber_data": ${subscriber_data},`);
+  }
+
+  const integrationExample = lines.join('\n');
 
   return (
     <div className="space-y-6">

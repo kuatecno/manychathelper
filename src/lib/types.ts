@@ -24,6 +24,7 @@ export const GenerateQRSchema = z.object({
   type: z.enum(['promotion', 'validation', 'discount']).optional(), // Override tool default
   metadata: z.record(z.string(), z.any()).optional(), // Merged with tool default
   expires_in_days: z.number().optional(), // Override tool default
+  subscriber_data: z.any().optional(), // Full Manychat subscriber data from {{subscriber_data|to_json:true}}
 });
 
 // Tool availability schema
