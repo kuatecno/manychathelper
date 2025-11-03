@@ -15,10 +15,10 @@ const UpdateToolSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ toolId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { toolId: id } = await params;
     const { searchParams } = new URL(request.url);
     const adminId = searchParams.get('adminId');
 
@@ -69,10 +69,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ toolId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { toolId: id } = await params;
     const body = await request.json();
     const validated = UpdateToolSchema.parse(body);
 
@@ -131,10 +131,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ toolId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { toolId: id } = await params;
 
     await prisma.tool.delete({
       where: { id },
