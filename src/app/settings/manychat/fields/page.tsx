@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CheckCircle2, AlertCircle, FileText, ArrowLeft, Plus, RefreshCw } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, FileText, ArrowLeft, Plus, RefreshCw, Edit2, Save, X } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CustomFieldsManagementPage() {
@@ -47,6 +47,9 @@ export default function CustomFieldsManagementPage() {
     type: 'text' as 'text' | 'number' | 'date' | 'datetime' | 'boolean' | 'array',
     description: '',
   });
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState<{ name: string; description: string }>({ name: '', description: '' });
+  const [savingFieldId, setSavingFieldId] = useState<string | null>(null);
 
   const formatDate = (date: any) => {
     if (!date) return '—';
@@ -173,6 +176,63 @@ export default function CustomFieldsManagementPage() {
     }
   };
 
+  const handleStartEdit = (field: any) => {
+    setEditingFieldId(field.id);
+    setEditValues({
+      name: field.name,
+      description: field.description || '',
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingFieldId(null);
+    setEditValues({ name: '', description: '' });
+  };
+
+  const handleSaveEdit = async (fieldId: string) => {
+    if (!editValues.name.trim()) {
+      setError('Field name cannot be empty');
+      return;
+    }
+
+    setSavingFieldId(fieldId);
+    setError('');
+
+    try {
+      const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+      const res = await fetch('/api/manychat/fields/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_id: admin.id,
+          field_id: fieldId,
+          name: editValues.name,
+          description: editValues.description || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update custom field');
+        return;
+      }
+
+      setSuccess('Custom field updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+
+      setEditingFieldId(null);
+      setEditValues({ name: '', description: '' });
+
+      // Reload fields
+      loadCustomFields();
+    } catch (err) {
+      setError('An error occurred while updating custom field');
+    } finally {
+      setSavingFieldId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -274,36 +334,93 @@ export default function CustomFieldsManagementPage() {
                     <TableHead>Description</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead>Last Updated</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customFields.map((field) => (
-                    <TableRow key={field.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          {field.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                          {field.type}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-mono text-sm">
-                        {field.manychatFieldId}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground max-w-xs truncate">
-                        {field.description || '—'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(field.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(field.updatedAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {customFields.map((field) => {
+                    const isEditing = editingFieldId === field.id;
+                    const isSaving = savingFieldId === field.id;
+
+                    return (
+                      <TableRow key={field.id}>
+                        <TableCell className="font-medium">
+                          {isEditing ? (
+                            <Input
+                              value={editValues.name}
+                              onChange={(e) => setEditValues({ ...editValues, name: e.target.value })}
+                              className="h-8"
+                            />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              {field.name}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                            {field.type}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground font-mono text-sm">
+                          {field.manychatFieldId}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground max-w-xs">
+                          {isEditing ? (
+                            <Input
+                              value={editValues.description}
+                              onChange={(e) => setEditValues({ ...editValues, description: e.target.value })}
+                              placeholder="Optional description"
+                              className="h-8"
+                            />
+                          ) : (
+                            <span className="truncate">{field.description || '—'}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatDate(field.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatDate(field.updatedAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditing ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleSaveEdit(field.id)}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Save className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleStartEdit(field)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

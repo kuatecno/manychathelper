@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CheckCircle2, AlertCircle, Tag, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Tag, ArrowLeft, RefreshCw, Edit2, Save, X } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TagsManagementPage() {
@@ -23,6 +24,9 @@ export default function TagsManagementPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [tags, setTags] = useState<any[]>([]);
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [savingTagId, setSavingTagId] = useState<string | null>(null);
 
   const formatDate = (date: any) => {
     if (!date) return '—';
@@ -101,6 +105,59 @@ export default function TagsManagementPage() {
       setError('An error occurred while syncing tags');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleStartEdit = (tag: any) => {
+    setEditingTagId(tag.id);
+    setEditName(tag.name);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTagId(null);
+    setEditName('');
+  };
+
+  const handleSaveEdit = async (tagId: string) => {
+    if (!editName.trim()) {
+      setError('Tag name cannot be empty');
+      return;
+    }
+
+    setSavingTagId(tagId);
+    setError('');
+
+    try {
+      const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+      const res = await fetch('/api/manychat/tags/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_id: admin.id,
+          tag_id: tagId,
+          name: editName,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to update tag');
+        return;
+      }
+
+      setSuccess('Tag updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+
+      setEditingTagId(null);
+      setEditName('');
+
+      // Reload tags
+      loadTags();
+    } catch (err) {
+      setError('An error occurred while updating tag');
+    } finally {
+      setSavingTagId(null);
     }
   };
 
@@ -187,28 +244,76 @@ export default function TagsManagementPage() {
                     <TableHead>Manychat ID</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead>Last Updated</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tags.map((tag) => (
-                    <TableRow key={tag.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
-                          {tag.name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-mono text-sm">
-                        {tag.manychatTagId}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(tag.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(tag.updatedAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {tags.map((tag) => {
+                    const isEditing = editingTagId === tag.id;
+                    const isSaving = savingTagId === tag.id;
+
+                    return (
+                      <TableRow key={tag.id}>
+                        <TableCell className="font-medium">
+                          {isEditing ? (
+                            <Input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="h-8"
+                            />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Tag className="h-4 w-4 text-muted-foreground" />
+                              {tag.name}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground font-mono text-sm">
+                          {tag.manychatTagId}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatDate(tag.createdAt)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatDate(tag.updatedAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditing ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleSaveEdit(tag.id)}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Save className="h-4 w-4" />
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleCancelEdit}
+                                disabled={isSaving}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleStartEdit(tag)}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
