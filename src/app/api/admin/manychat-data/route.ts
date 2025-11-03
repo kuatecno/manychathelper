@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
         id: true,
         manychatTagId: true,
         name: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: { name: 'asc' },
     });
@@ -33,6 +35,8 @@ export async function GET(request: NextRequest) {
         name: true,
         type: true,
         description: true,
+        createdAt: true,
+        updatedAt: true,
       },
       orderBy: { name: 'asc' },
     });
