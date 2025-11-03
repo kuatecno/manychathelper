@@ -534,7 +534,7 @@ export default function ManychatSettingsPage() {
               To automatically import contacts when they interact with your Manychat bot, you need to configure an automation with an External Request.
             </p>
             <Button
-              onClick={() => router.push('/settings/manychat/webhook-helper')}
+              onClick={() => router.push('/settings/manychat/instructions')}
               variant="default"
             >
               View Setup Instructions

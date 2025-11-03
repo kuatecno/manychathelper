@@ -288,7 +288,7 @@ export default function UsersPage() {
                 {searchTerm ? 'No contacts found matching your search.' : 'No contacts found.'}
               </p>
               {!searchTerm && (
-                <Link href="/settings/manychat/webhook-helper">
+                <Link href="/settings/manychat/instructions">
                   <Button variant="link" className="mt-2">
                     Set up Manychat integration →
                   </Button>
