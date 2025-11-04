@@ -33,7 +33,7 @@ export const CORE_FLOWS: CoreFlow[] = [
     id: 'story-share-tracker',
     name: '📊 Story Share Tracker',
     description: 'Track how many times users share your posts/reels as Instagram stories',
-    category: 'engagement',
+    category: 'tracking',
     trigger: {
       type: 'story_share',
       description: 'When user shares your Post or Reel as a Story',
@@ -79,7 +79,7 @@ export const CORE_FLOWS: CoreFlow[] = [
     id: 'story-reply-tracker',
     name: '💬 Story Reply Tracker',
     description: 'Track how many times users reply to your Instagram stories',
-    category: 'engagement',
+    category: 'tracking',
     trigger: {
       type: 'story_reply',
       description: 'When user replies to your Instagram Story',
@@ -125,7 +125,7 @@ export const CORE_FLOWS: CoreFlow[] = [
     id: 'comment-tracker',
     name: '💭 Comment Tracker',
     description: 'Track how many times users comment on your Instagram posts',
-    category: 'engagement',
+    category: 'tracking',
     trigger: {
       type: 'comment',
       description: 'When user comments on your Instagram post',

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { CORE_FLOWS, type CoreFlow } from '@/lib/core-flows';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CustomFieldSetup } from '@/components/custom-field-setup';
 
 const categoryIcons = {
   engagement: TrendingUp,
@@ -152,9 +153,15 @@ export default function CoreFlowsPage() {
                         </DialogHeader>
 
                         <div className="space-y-6 mt-4">
+                          {/* Custom Field Setup */}
+                          <div>
+                            <h3 className="font-semibold mb-2">Step 1: Setup Custom Fields</h3>
+                            <CustomFieldSetup flow={flow} />
+                          </div>
+
                           {/* Trigger Details */}
                           <div>
-                            <h3 className="font-semibold mb-2">Trigger</h3>
+                            <h3 className="font-semibold mb-2">Step 2: Create Manychat Trigger</h3>
                             <Card>
                               <CardContent className="pt-4">
                                 <div className="flex items-center gap-2">
@@ -165,7 +172,7 @@ export default function CoreFlowsPage() {
                             </Card>
                           </div>
 
-                          {/* Custom Fields */}
+                          {/* Custom Fields Reference */}
                           <div>
                             <h3 className="font-semibold mb-2">Required Custom Fields</h3>
                             <div className="space-y-2">
@@ -206,7 +213,7 @@ export default function CoreFlowsPage() {
 
                           {/* Setup Instructions */}
                           <div>
-                            <h3 className="font-semibold mb-2">Setup Instructions</h3>
+                            <h3 className="font-semibold mb-2">Step 3: Build Automation in Manychat</h3>
                             <Card>
                               <CardContent className="pt-4">
                                 <ol className="space-y-3">
