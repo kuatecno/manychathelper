@@ -841,24 +841,61 @@ export default function QRToolDetailPage() {
                 <CardDescription>All QR codes created by this tool</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {qrCodes.map((qr) => (
-                    <div
-                      key={qr.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="font-mono text-sm">{qr.code}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Created: {formatDate(qr.createdAt)}
-                          {qr.expiresAt && ` • Expires: ${formatDate(qr.expiresAt)}`}
+                    <Card key={qr.id}>
+                      <CardContent className="p-4">
+                        <div className="flex flex-col items-center space-y-3">
+                          {/* QR Code Image */}
+                          <div className="bg-white p-3 rounded-lg border-2">
+                            <img
+                              src={`/api/qr/image/${encodeURIComponent(qr.code)}`}
+                              alt={qr.code}
+                              className="w-48 h-48"
+                            />
+                          </div>
+
+                          {/* QR Code Info */}
+                          <div className="w-full space-y-2">
+                            <div className="font-mono text-sm text-center break-all px-2">
+                              {qr.code}
+                            </div>
+
+                            <div className="text-xs text-muted-foreground text-center">
+                              Created: {formatDate(qr.createdAt)}
+                            </div>
+
+                            {qr.expiresAt && (
+                              <div className="text-xs text-muted-foreground text-center">
+                                Expires: {formatDate(qr.expiresAt)}
+                              </div>
+                            )}
+
+                            <div className="flex items-center justify-center gap-2 text-sm">
+                              <Badge variant="secondary">
+                                {qr.usageCount} scans
+                                {qr.maxUses && ` / ${qr.maxUses}`}
+                              </Badge>
+                            </div>
+
+                            {/* Download Button */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = `/api/qr/image/${encodeURIComponent(qr.code)}`;
+                                link.download = `${qr.code}.png`;
+                                link.click();
+                              }}
+                            >
+                              Download QR Code
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {qr.usageCount} scans
-                        {qr.maxUses && ` / ${qr.maxUses}`}
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </CardContent>
