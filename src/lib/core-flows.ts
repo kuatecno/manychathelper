@@ -316,3 +316,34 @@ export function getAllCustomFieldNames(): string[] {
   });
   return Array.from(fields);
 }
+
+/**
+ * Check if a custom field name is a Core Flow tracker field
+ */
+export function isCoreFlowField(fieldName: string): boolean {
+  return fieldName.startsWith('flowkick-');
+}
+
+/**
+ * Get the Core Flow associated with a field name
+ */
+export function getCoreFlowByFieldName(fieldName: string): CoreFlow | undefined {
+  return CORE_FLOWS.find((flow) =>
+    flow.customFields.some((field) => field.name === fieldName)
+  );
+}
+
+/**
+ * Get tracker field details
+ */
+export function getTrackerFieldInfo(fieldName: string) {
+  const flow = getCoreFlowByFieldName(fieldName);
+  if (!flow) return null;
+
+  const field = flow.customFields.find((f) => f.name === fieldName);
+  return {
+    flow,
+    field,
+    icon: flow.name.split(' ')[0], // Get emoji from flow name
+  };
+}

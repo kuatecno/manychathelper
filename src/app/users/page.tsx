@@ -29,6 +29,7 @@ import {
   History
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { isCoreFlowField, getTrackerFieldInfo } from '@/lib/core-flows';
 
 interface User {
   id: string;
@@ -51,6 +52,7 @@ interface User {
   qrCodesCount: number;
   createdAt: string;
   tags?: Array<{ name: string }>;
+  customFields?: Array<{ name: string; type: string; value: any }>;
 }
 
 export default function UsersPage() {
@@ -302,6 +304,7 @@ export default function UsersPage() {
                   <TableHead>Contact</TableHead>
                   <TableHead>Contact Info</TableHead>
                   <TableHead>Channels</TableHead>
+                  <TableHead>Trackers</TableHead>
                   <TableHead>Tags</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -391,6 +394,30 @@ export default function UsersPage() {
                           <span className="text-muted-foreground text-xs">None</span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {user.customFields && user.customFields.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.customFields
+                            .filter((field) => isCoreFlowField(field.name))
+                            .slice(0, 3)
+                            .map((field, i) => {
+                              const info = getTrackerFieldInfo(field.name);
+                              return (
+                                <Badge key={i} variant="secondary" className="text-xs">
+                                  {info?.icon} {field.value || 0}
+                                </Badge>
+                              );
+                            })}
+                          {user.customFields.filter((f) => isCoreFlowField(f.name)).length > 3 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{user.customFields.filter((f) => isCoreFlowField(f.name)).length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">No data</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {user.tags && user.tags.length > 0 ? (

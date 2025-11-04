@@ -30,8 +30,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, CheckCircle2, AlertCircle, FileText, ArrowLeft, Plus, RefreshCw, Edit2, Save, X, Trash2 } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, FileText, ArrowLeft, Plus, RefreshCw, Edit2, Save, X, Trash2, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { isCoreFlowField, getTrackerFieldInfo } from '@/lib/core-flows';
 
 export default function CustomFieldsManagementPage() {
   const router = useRouter();
@@ -400,8 +402,32 @@ export default function CustomFieldsManagementPage() {
                             />
                           ) : (
                             <div className="flex items-center gap-2">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              {field.name}
+                              {isCoreFlowField(field.name) ? (
+                                <>
+                                  {getTrackerFieldInfo(field.name)?.icon && (
+                                    <span className="text-lg">{getTrackerFieldInfo(field.name)?.icon}</span>
+                                  )}
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                      {field.name}
+                                      <Badge variant="secondary" className="text-xs">
+                                        <BarChart3 className="h-3 w-3 mr-1" />
+                                        Core Flow Tracker
+                                      </Badge>
+                                    </div>
+                                    {getTrackerFieldInfo(field.name)?.flow && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {getTrackerFieldInfo(field.name)?.flow.name.replace(/^[^\s]+\s/, '')}
+                                      </span>
+                                    )}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <FileText className="h-4 w-4 text-muted-foreground" />
+                                  {field.name}
+                                </>
+                              )}
                             </div>
                           )}
                         </TableCell>

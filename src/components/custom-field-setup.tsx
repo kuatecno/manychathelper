@@ -23,6 +23,7 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
   const [adminId, setAdminId] = useState<string>('');
   const [existingFields, setExistingFields] = useState<any[]>([]);
   const [fieldMappings, setFieldMappings] = useState<Record<string, string | null>>({});
+  const [savedMappings, setSavedMappings] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -65,6 +66,7 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
         autoMappings[field.name] = match ? 'existing:' + field.name : null;
       });
       setFieldMappings(autoMappings);
+      setSavedMappings(autoMappings);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -99,9 +101,14 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
       await loadCustomFields(adminId);
 
       // Update mapping to the newly created field
+      const newMapping = 'existing:' + fieldName;
       setFieldMappings((prev) => ({
         ...prev,
-        [fieldName]: 'existing:' + fieldName,
+        [fieldName]: newMapping,
+      }));
+      setSavedMappings((prev) => ({
+        ...prev,
+        [fieldName]: newMapping,
       }));
     } catch (e: any) {
       setError(e.message);
@@ -111,7 +118,7 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
   };
 
   const getFieldStatus = (fieldName: string) => {
-    const mapping = fieldMappings[fieldName];
+    const mapping = savedMappings[fieldName];
     if (!mapping) return 'unmapped';
     if (mapping.startsWith('existing:')) {
       const existingFieldName = mapping.replace('existing:', '');
@@ -125,18 +132,21 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
     return status === 'matched' || status === 'remapped';
   });
 
+  const hasPendingChanges = JSON.stringify(fieldMappings) !== JSON.stringify(savedMappings);
+
+  const handleSaveMappings = () => {
+    setSavedMappings(fieldMappings);
+    setSuccess('Field mappings saved! Use the field names shown below in your Manychat automation.');
+    setTimeout(() => setSuccess(''), 5000);
+  };
+
   const getMappedFieldName = (standardName: string): string => {
-    const mapping = fieldMappings[standardName];
+    const mapping = savedMappings[standardName];
     if (mapping?.startsWith('existing:')) {
       return mapping.replace('existing:', '');
     }
     return standardName;
   };
-
-  const hasRemappedFields = flow.customFields.some((field) => {
-    const status = getFieldStatus(field.name);
-    return status === 'remapped';
-  });
 
   return (
     <div className="space-y-4">
@@ -191,6 +201,12 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
                                   Ready
                                 </Badge>
                               )}
+                              {status === 'remapped' && (
+                                <Badge variant="default" className="text-xs bg-blue-500">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Mapped
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-xs text-muted-foreground">
                               {field.description}
@@ -216,7 +232,7 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
                             {existingFields.length > 0 && (
                               <div className="space-y-2">
                                 <label className="text-xs text-muted-foreground">
-                                  Or use existing field:
+                                  Or map to existing field:
                                 </label>
                                 <Select
                                   value={fieldMappings[field.name] || undefined}
@@ -260,6 +276,15 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
                   </Card>
                 );
               })}
+            </div>
+          )}
+
+          {hasPendingChanges && (
+            <div className="flex justify-end">
+              <Button onClick={handleSaveMappings} size="sm">
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Save Mappings
+              </Button>
             </div>
           )}
 

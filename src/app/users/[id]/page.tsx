@@ -30,6 +30,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { isCoreFlowField, getTrackerFieldInfo } from '@/lib/core-flows';
 
 interface UserDetail {
   id: string;
@@ -174,6 +175,10 @@ export default function UserDetailPage() {
   const commentsField = user.customFields.find((f) => f.name === 'commentcountinsta');
   const storiesField = user.customFields.find((f) => f.name === 'storiescountinsta');
 
+  // Separate trackers from regular custom fields
+  const trackerFields = user.customFields.filter((f) => isCoreFlowField(f.name));
+  const regularFields = user.customFields.filter((f) => !isCoreFlowField(f.name));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -270,8 +275,12 @@ export default function UserDetailPage() {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="trackers">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Trackers ({trackerFields.length})
+          </TabsTrigger>
           <TabsTrigger value="custom-fields">
-            Custom Fields ({user.customFields.length})
+            Custom Fields ({regularFields.length})
           </TabsTrigger>
           <TabsTrigger value="tags">Tags ({user.tags.length})</TabsTrigger>
           <TabsTrigger value="history" onClick={() => history.length === 0 && loadHistory()}>
@@ -410,6 +419,66 @@ export default function UserDetailPage() {
           </Card>
         </TabsContent>
 
+        {/* Trackers Tab */}
+        <TabsContent value="trackers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Core Flow Trackers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {trackerFields.length === 0 ? (
+                <div className="text-center py-8">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground mb-2">No trackers configured yet</p>
+                  <p className="text-sm text-muted-foreground">
+                    Set up Core Flow trackers in{' '}
+                    <Link href="/flows" className="text-primary hover:underline">
+                      Flows
+                    </Link>
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {trackerFields.map((field, idx) => {
+                    const info = getTrackerFieldInfo(field.name);
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          {info?.icon && (
+                            <div className="text-2xl">{info.icon}</div>
+                          )}
+                          <div>
+                            <div className="font-medium">
+                              {info?.flow.name.replace(/^[^\s]+\s/, '') || field.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {info?.field?.description || field.name}
+                            </div>
+                            <code className="text-xs bg-muted px-2 py-0.5 rounded mt-1 inline-block">
+                              {field.name}
+                            </code>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-bold">
+                            {field.value !== null ? String(field.value) : '0'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {field.type}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Custom Fields Tab */}
         <TabsContent value="custom-fields">
           <Card>
@@ -417,13 +486,13 @@ export default function UserDetailPage() {
               <CardTitle>Custom Fields</CardTitle>
             </CardHeader>
             <CardContent>
-              {user.customFields.length === 0 ? (
+              {regularFields.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   No custom fields
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {user.customFields.map((field, idx) => (
+                  {regularFields.map((field, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between p-3 border rounded-lg"

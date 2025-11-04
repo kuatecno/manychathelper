@@ -20,6 +20,16 @@ export async function GET() {
             },
           },
         },
+        customFieldValues: {
+          include: {
+            customField: {
+              select: {
+                name: true,
+                type: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -48,6 +58,11 @@ export async function GET() {
         bookingsCount: u._count.bookings,
         qrCodesCount: u._count.qrCodes,
         tags: u.contactTags.map((ct) => ({ name: ct.tag.name })),
+        customFields: u.customFieldValues.map((cfv) => ({
+          name: cfv.customField.name,
+          type: cfv.customField.type,
+          value: cfv.value,
+        })),
         createdAt: u.createdAt.toISOString(),
       })),
     });
