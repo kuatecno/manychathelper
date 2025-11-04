@@ -30,8 +30,8 @@ export interface CoreFlow {
 
 export const CORE_FLOWS: CoreFlow[] = [
   {
-    id: 'story-share-counter',
-    name: '📊 Story Share Counter',
+    id: 'story-share-tracker',
+    name: '📊 Story Share Tracker',
     description: 'Track how many times users share your posts/reels as Instagram stories',
     category: 'engagement',
     trigger: {
@@ -76,8 +76,8 @@ export const CORE_FLOWS: CoreFlow[] = [
     ],
   },
   {
-    id: 'story-reply-counter',
-    name: '💬 Story Reply Counter',
+    id: 'story-reply-tracker',
+    name: '💬 Story Reply Tracker',
     description: 'Track how many times users reply to your Instagram stories',
     category: 'engagement',
     trigger: {
@@ -122,8 +122,8 @@ export const CORE_FLOWS: CoreFlow[] = [
     ],
   },
   {
-    id: 'comment-counter',
-    name: '💭 Comment Counter',
+    id: 'comment-tracker',
+    name: '💭 Comment Tracker',
     description: 'Track how many times users comment on your Instagram posts',
     category: 'engagement',
     trigger: {
