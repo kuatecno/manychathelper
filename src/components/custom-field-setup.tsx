@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { CheckCircle2, AlertCircle, Plus, RefreshCw } from 'lucide-react';
 import type { CoreFlow } from '@/lib/core-flows';
 
@@ -115,9 +122,21 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
 
   const allFieldsConfigured = flow.customFields.every((field) => {
     const status = getFieldStatus(field.name);
-    return status === 'matched';
+    return status === 'matched' || status === 'remapped';
   });
 
+  const getMappedFieldName = (standardName: string): string => {
+    const mapping = fieldMappings[standardName];
+    if (mapping?.startsWith('existing:')) {
+      return mapping.replace('existing:', '');
+    }
+    return standardName;
+  };
+
+  const hasRemappedFields = flow.customFields.some((field) => {
+    const status = getFieldStatus(field.name);
+    return status === 'remapped';
+  });
 
   return (
     <div className="space-y-4">
@@ -180,18 +199,54 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
                         </div>
 
                         {!existingField ? (
-                          <Button
-                            size="sm"
-                            onClick={() => createCustomField(field.name, field.type)}
-                            disabled={creating === field.name}
-                          >
-                            {creating === field.name ? (
-                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <Plus className="h-4 w-4 mr-2" />
+                          <div className="space-y-3">
+                            <Button
+                              size="sm"
+                              onClick={() => createCustomField(field.name, field.type)}
+                              disabled={creating === field.name}
+                            >
+                              {creating === field.name ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Plus className="h-4 w-4 mr-2" />
+                              )}
+                              Create in Manychat
+                            </Button>
+
+                            {existingFields.length > 0 && (
+                              <div className="space-y-2">
+                                <label className="text-xs text-muted-foreground">
+                                  Or use existing field:
+                                </label>
+                                <Select
+                                  value={fieldMappings[field.name] || undefined}
+                                  onValueChange={(value) => {
+                                    setFieldMappings((prev) => ({
+                                      ...prev,
+                                      [field.name]: value,
+                                    }));
+                                  }}
+                                >
+                                  <SelectTrigger className="text-xs">
+                                    <SelectValue placeholder="Select existing field..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {existingFields
+                                      .filter((f) => f.type === field.type)
+                                      .map((f) => (
+                                        <SelectItem
+                                          key={f.id}
+                                          value={`existing:${f.name}`}
+                                          className="text-xs"
+                                        >
+                                          {f.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             )}
-                            Create in Manychat
-                          </Button>
+                          </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -217,18 +272,30 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
                     All fields ready!
                   </p>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <p className="text-sm text-green-800 dark:text-green-200">
                     Use these custom field names in your Manychat automation:
                   </p>
-                  <ul className="list-disc list-inside space-y-1">
-                    {flow.customFields.map((field) => (
-                      <li key={field.name} className="text-sm text-green-800 dark:text-green-200">
-                        <code className="bg-green-100 dark:bg-green-900 px-2 py-0.5 rounded text-xs">
-                          {field.name}
-                        </code>
-                      </li>
-                    ))}
+                  <ul className="space-y-2">
+                    {flow.customFields.map((field) => {
+                      const mappedName = getMappedFieldName(field.name);
+                      const isDifferent = mappedName !== field.name;
+
+                      return (
+                        <li key={field.name} className="text-sm text-green-800 dark:text-green-200">
+                          <div className="flex items-center gap-2">
+                            <code className="bg-green-100 dark:bg-green-900 px-2 py-1 rounded text-xs font-mono">
+                              {mappedName}
+                            </code>
+                            {isDifferent && (
+                              <Badge variant="secondary" className="text-xs">
+                                mapped from {field.name}
+                              </Badge>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               </div>
