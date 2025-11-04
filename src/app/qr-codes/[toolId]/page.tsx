@@ -31,6 +31,7 @@ import {
   List,
   Trash2,
   Palette,
+  Grid3x3,
 } from 'lucide-react';
 import Link from 'next/link';
 import { MetadataBuilder } from '@/components/MetadataBuilder';
@@ -114,6 +115,7 @@ export default function QRToolDetailPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -216,6 +218,32 @@ export default function QRToolDetailPage() {
     navigator.clipboard.writeText(text);
     setCopied(label);
     setTimeout(() => setCopied(null), 2000);
+  };
+
+  const deleteQRCode = async (qrId: string) => {
+    if (!confirm('Are you sure you want to delete this QR code?')) return;
+
+    try {
+      const adminStr = localStorage.getItem('admin');
+      if (!adminStr) return;
+
+      const admin = JSON.parse(adminStr);
+      const response = await fetch(`/api/admin/qrcodes/${qrId}?adminId=${admin.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete QR code');
+      }
+
+      // Refresh QR codes list
+      setQRCodes(qrCodes.filter(qr => qr.id !== qrId));
+      setSuccess('QR code deleted successfully');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete QR code');
+      setTimeout(() => setError(''), 5000);
+    }
   };
 
   const formatDate = (dateString: string | null) => {
@@ -837,67 +865,156 @@ export default function QRToolDetailPage() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Generated QR Codes</CardTitle>
-                <CardDescription>All QR codes created by this tool</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Generated QR Codes</CardTitle>
+                    <CardDescription>All QR codes created by this tool</CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <Grid3x3 className="h-4 w-4 mr-2" />
+                      Grid
+                    </Button>
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                    >
+                      <List className="h-4 w-4 mr-2" />
+                      List
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {qrCodes.map((qr) => (
-                    <Card key={qr.id}>
-                      <CardContent className="p-4">
-                        <div className="flex flex-col items-center space-y-3">
-                          {/* QR Code Image */}
-                          <div className="bg-white p-3 rounded-lg border-2">
-                            <img
-                              src={`/api/qr/image/${encodeURIComponent(qr.code)}`}
-                              alt={qr.code}
-                              className="w-48 h-48"
-                            />
-                          </div>
-
-                          {/* QR Code Info */}
-                          <div className="w-full space-y-2">
-                            <div className="font-mono text-sm text-center break-all px-2">
-                              {qr.code}
+                {viewMode === 'grid' ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {qrCodes.map((qr) => (
+                      <Card key={qr.id}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col items-center space-y-3">
+                            {/* QR Code Image */}
+                            <div className="bg-white p-3 rounded-lg border-2">
+                              <img
+                                src={`/api/qr/image/${encodeURIComponent(qr.code)}`}
+                                alt={qr.code}
+                                className="w-48 h-48"
+                              />
                             </div>
 
-                            <div className="text-xs text-muted-foreground text-center">
-                              Created: {formatDate(qr.createdAt)}
-                            </div>
-
-                            {qr.expiresAt && (
-                              <div className="text-xs text-muted-foreground text-center">
-                                Expires: {formatDate(qr.expiresAt)}
+                            {/* QR Code Info */}
+                            <div className="w-full space-y-2">
+                              <div className="font-mono text-sm text-center break-all px-2">
+                                {qr.code}
                               </div>
-                            )}
 
-                            <div className="flex items-center justify-center gap-2 text-sm">
-                              <Badge variant="secondary">
-                                {qr.usageCount} scans
-                                {qr.maxUses && ` / ${qr.maxUses}`}
-                              </Badge>
+                              <div className="text-xs text-muted-foreground text-center">
+                                Created: {formatDate(qr.createdAt)}
+                              </div>
+
+                              {qr.expiresAt && (
+                                <div className="text-xs text-muted-foreground text-center">
+                                  Expires: {formatDate(qr.expiresAt)}
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-center gap-2 text-sm">
+                                <Badge variant="secondary">
+                                  {qr.usageCount} scans
+                                  {qr.maxUses && ` / ${qr.maxUses}`}
+                                </Badge>
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = `/api/qr/image/${encodeURIComponent(qr.code)}`;
+                                    link.download = `${qr.code}.png`;
+                                    link.click();
+                                  }}
+                                >
+                                  Download
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteQRCode(qr.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {qrCodes.map((qr) => (
+                      <div
+                        key={qr.id}
+                        className="flex items-center gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        {/* Small QR Code Image */}
+                        <div className="bg-white p-2 rounded border flex-shrink-0">
+                          <img
+                            src={`/api/qr/image/${encodeURIComponent(qr.code)}`}
+                            alt={qr.code}
+                            className="w-16 h-16"
+                          />
+                        </div>
 
-                            {/* Download Button */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = `/api/qr/image/${encodeURIComponent(qr.code)}`;
-                                link.download = `${qr.code}.png`;
-                                link.click();
-                              }}
-                            >
-                              Download QR Code
-                            </Button>
+                        {/* QR Code Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-mono text-sm break-all">{qr.code}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Created: {formatDate(qr.createdAt)}
+                            {qr.expiresAt && ` • Expires: ${formatDate(qr.expiresAt)}`}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+
+                        {/* Stats and Actions */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <Badge variant="secondary">
+                            {qr.usageCount} scans
+                            {qr.maxUses && ` / ${qr.maxUses}`}
+                          </Badge>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = `/api/qr/image/${encodeURIComponent(qr.code)}`;
+                              link.download = `${qr.code}.png`;
+                              link.click();
+                            }}
+                          >
+                            Download
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteQRCode(qr.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
