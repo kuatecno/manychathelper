@@ -16,7 +16,7 @@ export default function WebhookHelperPage() {
 
   useEffect(() => {
     // Set webhook URL
-    setWebhookUrl(`${window.location.origin}/api/manychat/sync/contact`);
+    setWebhookUrl('https://flowkick.kua.cl/api/manychat/sync/contact');
 
     // Get admin ID
     const adminStr = localStorage.getItem('admin');

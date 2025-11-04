@@ -543,12 +543,12 @@ export default function BookingToolDetailPage() {
                 <Label className="text-base font-semibold">Request URL</Label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 rounded-lg bg-muted p-3 font-mono text-sm break-all">
-                    {typeof window !== 'undefined' ? window.location.origin : ''}/api/bookings/create
+                    https://flowkick.kua.cl/api/bookings/create
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => copyToClipboard(`${window.location.origin}/api/bookings/create`, 'url')}
+                    onClick={() => copyToClipboard('https://flowkick.kua.cl/api/bookings/create', 'url')}
                   >
                     {copied === 'url' ? (
                       <CheckCircle2 className="h-4 w-4 text-green-600" />

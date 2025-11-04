@@ -37,7 +37,7 @@ export default function ManychatSettingsPage() {
 
   useEffect(() => {
     // Set webhook URL client-side only to avoid hydration error
-    setWebhookUrl(`${window.location.origin}/api/manychat/webhook`);
+    setWebhookUrl('https://flowkick.kua.cl/api/manychat/webhook');
 
     // Validate admin
     const adminStr = localStorage.getItem('admin');

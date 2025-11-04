@@ -23,7 +23,7 @@ export default function ManychatInstructionsPage() {
   const [error, setError] = useState('');
   const [adminUsername, setAdminUsername] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const baseUrl = 'https://flowkick.kua.cl';
 
   useEffect(() => {
     const adminStr = localStorage.getItem('admin');
