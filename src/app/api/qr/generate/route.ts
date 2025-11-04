@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
           manychatSubscriber = validated.subscriber_data;
 
           // Extract tags from subscriber if present
-          if (manychatSubscriber.tags) {
+          if (manychatSubscriber.tags && Array.isArray(manychatSubscriber.tags)) {
             tags = manychatSubscriber.tags.map((tag: any) => ({
               manychatTagId: String(tag.id),
               name: tag.name,
@@ -98,11 +98,21 @@ export async function POST(request: NextRequest) {
 
           // Extract custom fields from subscriber if present
           if (manychatSubscriber.custom_fields) {
-            customFields = manychatSubscriber.custom_fields.map((field: any) => ({
-              manychatFieldId: String(field.id),
-              name: field.name,
-              value: field.value,
-            }));
+            // Custom fields might be an object (key-value pairs) or array
+            if (Array.isArray(manychatSubscriber.custom_fields)) {
+              customFields = manychatSubscriber.custom_fields.map((field: any) => ({
+                manychatFieldId: String(field.id),
+                name: field.name,
+                value: field.value,
+              }));
+            } else if (typeof manychatSubscriber.custom_fields === 'object') {
+              // Convert object to array format
+              customFields = Object.entries(manychatSubscriber.custom_fields).map(([key, value]: [string, any]) => ({
+                manychatFieldId: key,
+                name: value?.name || key,
+                value: value?.value || value,
+              }));
+            }
           }
         } else if (tool.admin.manychatConfig?.apiToken) {
           // Fallback: Fetch Manychat data if API token is available
