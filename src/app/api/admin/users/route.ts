@@ -22,7 +22,7 @@ export async function GET() {
         },
         customFieldValues: {
           include: {
-            customField: {
+            field: {
               select: {
                 name: true,
                 type: true,
@@ -59,8 +59,8 @@ export async function GET() {
         qrCodesCount: u._count.qrCodes,
         tags: u.contactTags.map((ct) => ({ name: ct.tag.name })),
         customFields: u.customFieldValues.map((cfv) => ({
-          name: cfv.customField.name,
-          type: cfv.customField.type,
+          name: cfv.field.name,
+          type: cfv.field.type,
           value: cfv.value,
         })),
         createdAt: u.createdAt.toISOString(),
