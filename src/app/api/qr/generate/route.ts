@@ -71,6 +71,10 @@ export async function POST(request: NextRequest) {
     // Generate code - use dynamic format if configured, otherwise use legacy format
     let code: string;
 
+    console.log('[QR Generate] Tool config qrCodeFormat:', toolConfig?.qrCodeFormat);
+    console.log('[QR Generate] Subscriber data present:', !!validated.subscriber_data);
+    console.log('[QR Generate] Subscriber data type:', typeof validated.subscriber_data);
+
     if (toolConfig?.qrCodeFormat) {
       // Use new dynamic format system with Manychat data
       try {
@@ -80,6 +84,7 @@ export async function POST(request: NextRequest) {
 
         // Check if subscriber_data was provided directly in the request
         if (validated.subscriber_data) {
+          console.log('[QR Generate] Using subscriber_data from request');
           // Use subscriber data from request (from {{subscriber_data|to_json:true}})
           manychatSubscriber = validated.subscriber_data;
 
@@ -133,22 +138,27 @@ export async function POST(request: NextRequest) {
         }
 
         // Resolve the dynamic format pattern
+        console.log('[QR Generate] Resolving format with pattern:', toolConfig.qrCodeFormat);
+        console.log('[QR Generate] Subscriber first_name:', manychatSubscriber?.first_name);
         code = resolveQRCodeFormat(toolConfig.qrCodeFormat, {
           manychatSubscriber,
           tags,
           customFields,
         });
+        console.log('[QR Generate] Resolved code:', code);
 
         // If resolution resulted in empty code, use fallback
         if (!code || code.trim() === '') {
+          console.log('[QR Generate] Resolved code empty, using fallback');
           code = generateUniqueCode(user.id, qrType, toolConfig?.qrFormat);
         }
       } catch (error) {
-        console.error('Error resolving dynamic QR format:', error);
+        console.error('[QR Generate] Error resolving dynamic QR format:', error);
         // Fallback to legacy format
         code = generateUniqueCode(user.id, qrType, toolConfig?.qrFormat);
       }
     } else {
+      console.log('[QR Generate] No qrCodeFormat configured, using legacy format');
       // Use legacy format system
       code = generateUniqueCode(user.id, qrType, toolConfig?.qrFormat);
     }
