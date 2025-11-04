@@ -32,7 +32,7 @@ export function generateUniqueCode(userId: string, type: string): string {
   const code = `${type}-${userId.substring(0, 8)}-${timestamp}-${random}`;
 
   // Return a URL that redirects to validation
-  return `https://your-domain.com/qr/validate/${code}`;
+  return `https://flowkick.kua.cl/qr/validate/${code}`;
 }
 
 // Option 2: Simple serial number
@@ -131,7 +131,7 @@ In Manychat, create a flow with an **External Request** action:
 **Endpoint Configuration:**
 
 ```
-POST https://your-vercel-app.vercel.app/api/qr/generate
+POST https://flowkick.kua.cl/api/qr/generate
 ```
 
 **Request Body (JSON):**
@@ -165,7 +165,7 @@ POST https://your-vercel-app.vercel.app/api/qr/generate
   "qr_id": "clx8h2j9p0000...",
   "code": "PROMOTION-clx8h2j9-1738935842156-a7k9p2",
   "type": "promotion",
-  "qr_image_url": "https://your-app.vercel.app/api/qr/image/PROMOTION-clx8h2j9-...",
+  "qr_image_url": "https://flowkick.kua.cl/api/qr/image/PROMOTION-clx8h2j9-...",
   "expires_at": "2025-11-11T00:00:00.000Z",
   "created_at": "2025-10-11T00:00:00.000Z"
 }

@@ -1,4 +1,4 @@
-# Mchat-tools
+# Flowkick
 
 A powerful Next.js API service for Instagram booking systems and QR code generation via Manychat webhooks.
 
@@ -115,7 +115,7 @@ Content-Type: application/json
   "qr_id": "cmgi9m3vw0003suqm9xtkv5h4",
   "code": "PROMOTION-cmgi9kvw-1728392345-abc123",
   "type": "promotion",
-  "qr_image_url": "https://manychathelper.vercel.app/api/qr/image/PROMOTION-cmgi9kvw-1728392345-abc123",
+  "qr_image_url": "https://flowkick.kua.cl/api/qr/image/PROMOTION-cmgi9kvw-1728392345-abc123",
   "expires_at": "2025-10-15T09:00:00.000Z",
   "created_at": "2025-10-08T10:00:00.000Z"
 }
@@ -130,7 +130,7 @@ Returns the QR code as a PNG image. This URL can be used directly in Manychat im
 
 **Example:**
 ```
-https://manychathelper.vercel.app/api/qr/image/PROMOTION-cmgi9kvw-1728392345-abc123
+https://flowkick.kua.cl/api/qr/image/PROMOTION-cmgi9kvw-1728392345-abc123
 ```
 
 ### 5. Validate QR Code
@@ -178,7 +178,7 @@ Content-Type: application/json
 **Manychat Configuration:**
 ```json
 {
-  "url": "https://your-domain.com/api/bookings/create",
+  "url": "https://flowkick.kua.cl/api/bookings/create",
   "method": "POST",
   "headers": {
     "Content-Type": "application/json"
@@ -210,7 +210,7 @@ Content-Type: application/json
 **Manychat Configuration:**
 ```json
 {
-  "url": "https://your-domain.com/api/qr/generate",
+  "url": "https://flowkick.kua.cl/api/qr/generate",
   "method": "POST",
   "body": {
     "manychat_user_id": "{{user_id}}",
@@ -232,7 +232,7 @@ Content-Type: application/json
 **Display QR Code in Manychat:**
 Use the `qr_image_url` field directly in Manychat's image element. The URL format:
 ```
-https://manychathelper.vercel.app/api/qr/image/{{custom_field.qr_code_text}}
+https://flowkick.kua.cl/api/qr/image/{{custom_field.qr_code_text}}
 ```
 
 ## Database Schema

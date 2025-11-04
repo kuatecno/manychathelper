@@ -2,7 +2,7 @@
 const fetch = require('node-fetch');
 
 const testWebhook = async () => {
-  const url = 'http://localhost:3000/api/manychat/sync/contact';
+  const url = 'https://flowkick.kua.cl/api/manychat/sync/contact';
 
   const body = {
     admin_id: 'cmgotjcv50000ji042w5f95z6',

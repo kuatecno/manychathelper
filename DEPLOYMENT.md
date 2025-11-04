@@ -96,6 +96,6 @@ The 500 error on `/api/admin/stats` is because:
 ## Testing Deployment
 
 After setup, test these URLs:
-- `https://manychathelper.vercel.app/admin` - Admin dashboard
-- `https://manychathelper.vercel.app/api/helpers/list` - Should return `{"helpers":[]}`
-- `https://manychathelper.vercel.app/api/admin/stats` - Should return stats (not 500)
+- `https://flowkick.kua.cl/admin` - Admin dashboard
+- `https://flowkick.kua.cl/api/helpers/list` - Should return `{"helpers":[]}`
+- `https://flowkick.kua.cl/api/admin/stats` - Should return stats (not 500)

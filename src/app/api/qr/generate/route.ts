@@ -209,8 +209,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate public URL for QR code image with admin username
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
+    const baseUrl = process.env.NODE_ENV === 'production'
+      ? 'https://flowkick.kua.cl'
       : request.headers.get('origin') || 'http://localhost:3001';
     const qrImageUrl = `${baseUrl}/api/qr/${tool.admin.username}/${encodeURIComponent(qrCode.code)}`;
 
