@@ -4,13 +4,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { CheckCircle2, AlertCircle, Plus, RefreshCw } from 'lucide-react';
 import type { CoreFlow } from '@/lib/core-flows';
 
@@ -122,8 +115,9 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
 
   const allFieldsConfigured = flow.customFields.every((field) => {
     const status = getFieldStatus(field.name);
-    return status === 'matched' || status === 'remapped';
+    return status === 'matched';
   });
+
 
   return (
     <div className="space-y-4">
@@ -131,7 +125,7 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
         <CardHeader>
           <CardTitle className="text-lg">Custom Field Setup</CardTitle>
           <CardDescription>
-            Map or create the required custom fields for this flow
+            Create custom fields with the standard Flowkick names for this tracker
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -186,63 +180,24 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
                         </div>
 
                         {!existingField ? (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => createCustomField(field.name, field.type)}
-                              disabled={creating === field.name}
-                            >
-                              {creating === field.name ? (
-                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Plus className="h-4 w-4 mr-2" />
-                              )}
-                              Create in Manychat
-                            </Button>
-                            <span className="text-xs text-muted-foreground">
-                              or map to existing field
-                            </span>
-                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => createCustomField(field.name, field.type)}
+                            disabled={creating === field.name}
+                          >
+                            {creating === field.name ? (
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Plus className="h-4 w-4 mr-2" />
+                            )}
+                            Create in Manychat
+                          </Button>
                         ) : (
                           <div className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-500" />
                             <span className="text-sm text-green-700 dark:text-green-400">
                               Field exists in Manychat
                             </span>
-                          </div>
-                        )}
-
-                        {existingFields.length > 0 && !existingField && (
-                          <div className="space-y-2">
-                            <label className="text-xs text-muted-foreground">
-                              Or select existing field with tracking automation:
-                            </label>
-                            <Select
-                              value={fieldMappings[field.name] || undefined}
-                              onValueChange={(value) => {
-                                setFieldMappings((prev) => ({
-                                  ...prev,
-                                  [field.name]: value,
-                                }));
-                              }}
-                            >
-                              <SelectTrigger className="text-xs">
-                                <SelectValue placeholder="Select existing field..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {existingFields
-                                  .filter((f) => f.type === field.type)
-                                  .map((f) => (
-                                    <SelectItem
-                                      key={f.id}
-                                      value={`existing:${f.name}`}
-                                      className="text-xs"
-                                    >
-                                      {f.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
                           </div>
                         )}
                       </div>
@@ -255,15 +210,26 @@ export function CustomFieldSetup({ flow, onComplete }: CustomFieldSetupProps) {
 
           {allFieldsConfigured && (
             <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                   <p className="font-semibold text-green-900 dark:text-green-100">
-                    All fields configured!
+                    All fields ready!
                   </p>
+                </div>
+                <div className="space-y-1">
                   <p className="text-sm text-green-800 dark:text-green-200">
-                    You can now create the automation in Manychat using these custom fields.
+                    Use these custom field names in your Manychat automation:
                   </p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {flow.customFields.map((field) => (
+                      <li key={field.name} className="text-sm text-green-800 dark:text-green-200">
+                        <code className="bg-green-100 dark:bg-green-900 px-2 py-0.5 rounded text-xs">
+                          {field.name}
+                        </code>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
             </div>
