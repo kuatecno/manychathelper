@@ -237,7 +237,7 @@ export default function QRToolDetailPage() {
       }
 
       // Refresh QR codes list
-      setQRCodes(qrCodes.filter(qr => qr.id !== qrId));
+      setQrCodes(qrCodes.filter(qr => qr.id !== qrId));
       setSuccess('QR code deleted successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
