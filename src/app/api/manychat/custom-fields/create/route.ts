@@ -19,9 +19,12 @@ export async function POST(request: NextRequest) {
 
     const admin = await prisma.admin.findUnique({
       where: { id: adminId },
+      include: {
+        manychatConfig: true,
+      },
     });
 
-    if (!admin || !admin.manychatApiKey) {
+    if (!admin || !admin.manychatConfig) {
       await prisma.$disconnect();
       return NextResponse.json(
         { error: 'Admin not found or Manychat API key not configured' },
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Manychat client
-    const manychat = createManychatClient(admin.manychatApiKey);
+    const manychat = createManychatClient(admin.manychatConfig.apiToken);
 
     // Create custom field
     const result = await manychat.createCustomField(
