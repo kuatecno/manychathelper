@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
           valid: false,
           message: 'Invalid request format.',
           error: 'INVALID_REQUEST',
-          details: error.errors,
+          details: error.issues,
         },
         { status: 400 }
       );
