@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -24,6 +24,8 @@ model Admin {
   manychatConfig  ManychatConfig?
   tags            Tag[]
   customFields    CustomField[]
+  instagramVerifications InstagramVerification[]
+  verificationApiKeys VerificationApiKey[]
 }
 
 // User model - stores Instagram users who connect via Manychat
@@ -58,6 +60,7 @@ model User {
   contactTags     ContactTag[]
   interactionHistory InteractionHistory[]
   snapshots       UserSnapshot[]
+  instagramVerifications InstagramVerification[]
 }
 
 // Tool model - mini-applications users can access (QR generator, booking tool, forms, AI chat, etc.)
@@ -182,7 +185,7 @@ model AIMessage {
   id              String    @id @default(cuid())
   conversationId  String
   role            String    // "user", "assistant", "system"
-  content         String    @db.Text // Message content
+  content         String    // Message content
   tokens          Int?      // Token count for this message
   metadata        String?   // JSON string for additional data
   createdAt       DateTime  @default(now())
@@ -266,7 +269,7 @@ model CustomFieldValue {
   id              String    @id @default(cuid())
   userId          String
   fieldId         String
-  value           String?   @db.Text // Store all types as text, parse based on field.type
+  value           String?   // Store all types as text, parse based on field.type
   updatedAt       DateTime  @updatedAt
 
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -285,7 +288,7 @@ model SyncLog {
   status          String    // "pending", "in_progress", "completed", "failed"
   recordsSynced   Int       @default(0)
   recordsFailed   Int       @default(0)
-  errorMessage    String?   @db.Text
+  errorMessage    String?
   startedAt       DateTime  @default(now())
   completedAt     DateTime?
   metadata        String?   // JSON for additional context
@@ -328,13 +331,95 @@ model UserSnapshot {
   whatsappPhone   String?
   timezone        String?
   profilePic      String?
-  customFieldsData String?  @db.Text // JSON snapshot of all custom fields
-  tagsData        String?   @db.Text // JSON snapshot of all tags
+  customFieldsData String?  // JSON snapshot of all custom fields
+  tagsData        String?   // JSON snapshot of all tags
   createdAt       DateTime  @default(now())
 
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// InstagramVerification - Instagram DM verification for external websites
+model InstagramVerification {
+  id                String    @id @default(cuid())
+  code              String    @unique // Full code (e.g., "H45-73-XYZ")
+  servicePrefix     String    // Service identifier (e.g., "H45")
+  sessionId         String    // Session identifier (e.g., "73")
+  suffix            String    // Random suffix for security (e.g., "XYZ")
+
+  // External website integration
+  adminId           String    // Admin who owns this verification service
+  externalWebsite   String    // Domain or identifier of requesting website
+  externalUserId    String?   // External site's user ID (if provided)
+  webhookUrl        String?   // URL to POST validation result
+  callbackToken     String?   // Secret token for webhook authentication
+  apiKeyUsed        String?   // Which API key was used to generate this
+
+  // Instagram user (populated when DM is received)
+  userId            String?
+  igUsername        String?   // Instagram username who sent the DM
+  instagramId       String?   // Instagram platform ID
+  manychatUserId    String?   // Manychat subscriber ID
+
+  // Status tracking
+  status            String    @default("pending") // pending, verified, expired, failed
+  dmReceivedAt      DateTime?
+  verifiedAt        DateTime?
+  failureReason     String?   // Why validation failed
+
+  // Security & rate limiting
+  expiresAt         DateTime  // Short TTL (default 10 minutes)
+  attemptCount      Int       @default(0) // Number of validation attempts
+  ipAddress         String?   // IP that requested code generation
+
+  // Metadata
+  metadata          String?   // JSON for flexible additional data
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  admin             Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([code])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([adminId])
+  @@index([externalWebsite])
+  @@index([servicePrefix])
+  @@index([createdAt])
+}
+
+// VerificationApiKey - API keys for external websites to use verification service
+model VerificationApiKey {
+  id                String    @id @default(cuid())
+  adminId           String    // Admin who owns this API key
+  name              String    // Friendly name (e.g., "My E-commerce Site")
+  apiKey            String    @unique // The actual API key (hashed)
+  websiteDomain     String    // Domain this key is for
+  active            Boolean   @default(true)
+
+  // Rate limiting configuration
+  maxRequestsPerHour Int      @default(100)
+  maxRequestsPerDay  Int      @default(1000)
+
+  // Prefix configuration
+  servicePrefix     String    // Which prefix this key can use (e.g., "H45")
+
+  // Usage tracking
+  lastUsedAt        DateTime?
+  requestCount      Int       @default(0)
+
+  // Metadata
+  metadata          String?   // JSON for webhook URLs, allowed IPs, etc.
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  admin             Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([apiKey])
+  @@index([active])
 }
 
