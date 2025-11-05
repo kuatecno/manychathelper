@@ -13,7 +13,7 @@ const GenerateVerificationSchema = z.object({
   webhook_url: z.string().url().optional(),
   callback_token: z.string().optional(),
   expires_in_minutes: z.number().int().min(1).max(60).optional().default(10),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export async function POST(request: NextRequest) {
