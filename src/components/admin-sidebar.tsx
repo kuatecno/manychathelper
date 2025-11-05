@@ -15,6 +15,7 @@ import {
   LogOut,
   MessageSquare,
   Zap,
+  Scan,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ const navigation = [
   { name: 'Tools', href: '/tools', icon: Wrench },
   { name: 'Bookings', href: '/bookings', icon: Calendar },
   { name: 'QR Codes', href: '/qr-codes', icon: QrCode },
+  { name: 'QR Scanner', href: '/scanner', icon: Scan },
   { name: 'AI Chat', href: '/ai-chat', icon: MessageSquare },
   { name: 'Core Flows', href: '/flows', icon: Zap },
   { name: 'Contacts', href: '/users', icon: UserCircle },
