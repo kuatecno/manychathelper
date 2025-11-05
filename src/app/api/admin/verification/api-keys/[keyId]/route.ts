@@ -4,11 +4,12 @@ import { prisma } from '@/lib/prisma';
 // GET - Get specific API key details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { keyId: string } }
+  { params }: { params: Promise<{ keyId: string }> }
 ) {
   try {
+    const { keyId } = await params;
     const apiKey = await prisma.verificationApiKey.findUnique({
-      where: { id: params.keyId },
+      where: { id: keyId },
       select: {
         id: true,
         name: true,
@@ -60,9 +61,10 @@ export async function GET(
 // PUT - Update API key
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { keyId: string } }
+  { params }: { params: Promise<{ keyId: string }> }
 ) {
   try {
+    const { keyId } = await params;
     const body = await request.json();
     const { active, name, max_requests_per_hour, max_requests_per_day, metadata } = body;
 
@@ -74,7 +76,7 @@ export async function PUT(
     if (metadata) updateData.metadata = JSON.stringify(metadata);
 
     const apiKey = await prisma.verificationApiKey.update({
-      where: { id: params.keyId },
+      where: { id: keyId },
       data: updateData,
     });
 
@@ -99,11 +101,12 @@ export async function PUT(
 // DELETE - Delete API key
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { keyId: string } }
+  { params }: { params: Promise<{ keyId: string }> }
 ) {
   try {
+    const { keyId } = await params;
     await prisma.verificationApiKey.delete({
-      where: { id: params.keyId },
+      where: { id: keyId },
     });
 
     return NextResponse.json({
