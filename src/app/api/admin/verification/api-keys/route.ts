@@ -9,7 +9,7 @@ const CreateApiKeySchema = z.object({
   service_prefix: z.string().min(3).max(3),
   max_requests_per_hour: z.number().int().min(1).max(10000).optional().default(100),
   max_requests_per_day: z.number().int().min(1).max(100000).optional().default(1000),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 // GET - List all API keys for an admin
