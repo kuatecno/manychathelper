@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { generateApiKey, hashApiKey, SERVICE_PREFIXES } from '@/lib/verification';
+import { generateApiKey, hashApiKey } from '@/lib/verification';
 
 const CreateApiKeySchema = z.object({
   name: z.string().min(1),

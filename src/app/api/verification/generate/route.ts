@@ -47,10 +47,8 @@ export async function POST(request: NextRequest) {
                      request.headers.get('x-real-ip') ||
                      'unknown';
 
-    // Generate unique verification code
-    const { code, servicePrefix, sessionId, suffix } = await generateVerificationCode(
-      apiKeyRecord.servicePrefix
-    );
+    // Generate unique verification code with random prefix for security
+    const { code, servicePrefix, sessionId, suffix } = await generateVerificationCode();
 
     // Calculate expiration time
     const expiresAt = new Date();

@@ -2,17 +2,20 @@ import { prisma } from './prisma';
 import crypto from 'crypto';
 
 /**
- * Configuration for verification code prefixes
- * Each service can have its own prefix for different use cases
+ * Generate a random 3-character alphanumeric prefix
+ * This makes it harder for external parties to guess verification codes
  */
-export const SERVICE_PREFIXES = {
-  ECOMMERCE_AUTH: 'H45',
-  EVENT_CHECKIN: 'H46',
-  SUBSCRIPTION_VERIFY: 'H47',
-  GENERAL: 'H48',
-} as const;
+function generateServicePrefix(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const randomBytes = crypto.randomBytes(3);
+  let result = '';
 
-export type ServicePrefix = typeof SERVICE_PREFIXES[keyof typeof SERVICE_PREFIXES];
+  for (let i = 0; i < 3; i++) {
+    result += chars[randomBytes[i] % chars.length];
+  }
+
+  return result;
+}
 
 /**
  * Generate a random alphanumeric string
@@ -30,16 +33,16 @@ function generateRandomString(length: number): string {
 }
 
 /**
- * Generate a unique verification code
+ * Generate a unique verification code with random prefix
  * Format: PREFIX-SESSION-SUFFIX
- * Example: H45-73-XYZ
+ * Example: X7K-73-ABC
  *
- * @param servicePrefix - The service identifier (e.g., "H45")
+ * The prefix is now randomized for each code to prevent external parties from guessing codes
+ *
  * @param sessionIdLength - Length of session ID (default: 2)
  * @param suffixLength - Length of random suffix (default: 3)
  */
 export async function generateVerificationCode(
-  servicePrefix: string,
   sessionIdLength: number = 2,
   suffixLength: number = 3
 ): Promise<{ code: string; servicePrefix: string; sessionId: string; suffix: string }> {
@@ -47,6 +50,7 @@ export async function generateVerificationCode(
   const maxAttempts = 10;
 
   while (attempts < maxAttempts) {
+    const servicePrefix = generateServicePrefix(); // Generate random prefix for each code
     const sessionId = generateRandomString(sessionIdLength);
     const suffix = generateRandomString(suffixLength);
     const code = `${servicePrefix}-${sessionId}-${suffix}`;
