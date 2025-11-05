@@ -6,6 +6,10 @@
     {
       "path": "/api/manychat/sync/daily",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/flowkick-refresh-cache",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

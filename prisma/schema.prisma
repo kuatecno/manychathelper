@@ -423,3 +423,179 @@ model VerificationApiKey {
   @@index([active])
 }
 
+// ============================================================================
+// FLOWKICK SOCIAL MEDIA DATA SERVICE
+// ============================================================================
+
+// FlowkickClient - Clients subscribing to Flowkick's social media data service
+model FlowkickClient {
+  id                      String    @id @default(cuid())
+
+  // Client details
+  name                    String    // Business name
+  email                   String    @unique
+  apiKey                  String    @unique // Client's API key to access data
+  active                  Boolean   @default(true)
+
+  // Subscription plan
+  plan                    String    @default("free") // free, starter, pro, enterprise
+  monthlyRequestsLimit    Int       @default(1000)
+  monthlyRequestsUsed     Int       @default(0)
+  requestsResetAt         DateTime? // When monthly counter resets
+
+  // Social media accounts to track
+  instagramHandle         String?
+  tiktokHandle            String?
+  googlePlaceId           String?   // For Google Reviews
+  twitterHandle           String?
+  youtubeChannelId        String?
+  facebookPageId          String?
+
+  // Apify configuration
+  apifyUserId             String?   // If they have their own Apify account
+  apifyApiToken           String?   // Encrypted
+  useSharedApify          Boolean   @default(true) // Use Flowkick's Apify or their own
+
+  // Settings
+  cacheRefreshInterval    Int       @default(30) // Minutes
+  webhookUrl              String?   // Notify on new data
+  allowedOrigins          String?   // CORS - JSON array of domains
+
+  // Usage tracking
+  lastRequestAt           DateTime?
+  totalRequestsAllTime    Int       @default(0)
+
+  // Billing
+  stripeCustomerId        String?   @unique
+  stripeSubscriptionId    String?
+  subscriptionStatus      String?   // active, past_due, canceled, trialing
+  trialEndsAt             DateTime?
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  // Relations
+  socialMediaCache        SocialMediaCache[]
+  apiUsage                ApiUsage[]
+  dataSources             ApifyDataSource[]
+
+  @@index([apiKey])
+  @@index([email])
+  @@index([active])
+  @@index([plan])
+}
+
+// SocialMediaCache - Cached social media data per client
+model SocialMediaCache {
+  id                String    @id @default(cuid())
+  clientId          String    // Which client this data belongs to
+
+  platform          String    // instagram, tiktok, google_maps, twitter, youtube, facebook
+  dataType          String    // posts, videos, reviews, tweets, etc.
+
+  // The cached data (transformed and ready to serve)
+  data              String    // JSON string of posts/reviews/videos
+  itemCount         Int       @default(0)
+
+  // Cache metadata
+  fetchedAt         DateTime  @default(now())
+  expiresAt         DateTime  // When to refresh this cache
+  isFresh           Boolean   @default(true)
+
+  // Apify tracking
+  apifyDatasetId    String?   // Which Apify dataset this came from
+  apifyRunId        String?   // Which run generated this data
+
+  // Performance metrics
+  fetchDurationMs   Int?      // How long it took to fetch from Apify
+  transformDurationMs Int?    // How long transformation took
+  dataSourceId      String?   // Reference to ApifyDataSource
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  client            FlowkickClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  dataSource        ApifyDataSource? @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, platform, dataType])
+  @@index([clientId])
+  @@index([platform])
+  @@index([expiresAt])
+  @@index([isFresh])
+  @@index([fetchedAt])
+}
+
+// ApifyDataSource - Track Apify scrapers and their configurations
+model ApifyDataSource {
+  id                String    @id @default(cuid())
+  clientId          String    // Which client this is for (or null for shared)
+
+  platform          String    // instagram, tiktok, google_maps, etc.
+  actorId           String    // Apify actor ID
+  actorName         String?   // Human-readable name
+
+  // Configuration
+  config            String    // JSON: scraper configuration (handle, search query, etc.)
+  scheduleEnabled   Boolean   @default(false)
+  scheduleCron      String?   // Cron expression for scheduled runs
+
+  // Status
+  active            Boolean   @default(true)
+  lastRunId         String?   // Most recent Apify run ID
+  lastRunStatus     String?   // SUCCEEDED, FAILED, RUNNING
+  lastRunAt         DateTime?
+  lastDatasetId     String?   // Most recent dataset ID
+
+  // Usage tracking
+  totalRuns         Int       @default(0)
+  successfulRuns    Int       @default(0)
+  failedRuns        Int       @default(0)
+  avgRunDurationMs  Int?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  client            FlowkickClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  caches            SocialMediaCache[]
+
+  @@index([clientId])
+  @@index([platform])
+  @@index([active])
+  @@index([lastRunAt])
+}
+
+// ApiUsage - Track API requests for analytics and billing
+model ApiUsage {
+  id                String    @id @default(cuid())
+  clientId          String
+
+  // Request details
+  endpoint          String    // /api/v1/social/instagram, etc.
+  platform          String?   // instagram, tiktok, etc.
+  method            String    @default("GET")
+
+  // Response details
+  statusCode        Int       // 200, 400, 500, etc.
+  cacheHit          Boolean   @default(false) // Was this served from cache?
+  responseSizeBytes Int?      // Size of response
+  responseDurationMs Int?     // How long the request took
+
+  // Client info
+  userAgent         String?
+  ipAddress         String?
+  origin            String?   // Requesting domain
+
+  // Error tracking
+  errorMessage      String?
+
+  createdAt         DateTime  @default(now())
+
+  client            FlowkickClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([createdAt])
+  @@index([endpoint])
+  @@index([platform])
+  @@index([cacheHit])
+}
+
