@@ -341,7 +341,28 @@ function proxyImageUrl(originalUrl: string): string {
 }
 
 /**
+ * Extract hashtags from Instagram caption
+ */
+function extractHashtags(caption: string): string[] {
+  if (!caption) return [];
+  const hashtagRegex = /#[\w\u00C0-\u017F]+/g;
+  const matches = caption.match(hashtagRegex);
+  return matches ? matches.map(tag => tag.substring(1)) : []; // Remove # prefix
+}
+
+/**
+ * Extract mentions from Instagram caption
+ */
+function extractMentions(caption: string): string[] {
+  if (!caption) return [];
+  const mentionRegex = /@[\w.]+/g;
+  const matches = caption.match(mentionRegex);
+  return matches ? matches.map(mention => mention.substring(1)) : []; // Remove @ prefix
+}
+
+/**
  * Transform Instagram data from Apify to Flowkick format
+ * Enhanced to extract hashtags, mentions, and carousel images
  */
 function transformInstagramData(rawData: any[]): any[] {
   const posts: any[] = [];
@@ -354,34 +375,59 @@ function transformInstagramData(rawData: any[]): any[] {
       : new Date().toISOString();
 
     const postUrl = post.url || `https://www.instagram.com/p/${post.shortCode}/`;
+    const caption = post.caption || '';
 
-    // Handle carousel posts
+    // Extract metadata from caption
+    const hashtags = extractHashtags(caption);
+    const mentions = extractMentions(caption);
+
+    // Handle carousel posts - store all images in one post
     if (post.type === 'Sidecar' && post.childPosts?.length > 0) {
-      post.childPosts.forEach((childPost: any, childIndex: number) => {
-        const imageUrl = childPost.displayUrl || childPost.url;
-        posts.push({
-          id: `${post.shortCode}-${childIndex}`,
-          platform: 'instagram',
-          imageUrl: proxyImageUrl(imageUrl),
-          videoUrl: childPost.videoUrl ? proxyImageUrl(childPost.videoUrl) : undefined,
-          postUrl,
-          caption: post.caption || '',
-          timestamp: dateStr,
-          likes: post.likesCount || 0,
-          comments: post.commentsCount || 0,
+      const carouselImages = post.childPosts.map((childPost: any) => {
+        const url = childPost.displayUrl || childPost.url;
+        return {
+          url: proxyImageUrl(url),
           type: childPost.isVideo ? 'video' : 'image',
-          shortCode: post.shortCode,
-        });
+          videoUrl: childPost.videoUrl ? proxyImageUrl(childPost.videoUrl) : undefined,
+        };
+      });
+
+      // Use first image/video as primary
+      const primaryMedia = carouselImages[0];
+
+      posts.push({
+        id: post.shortCode || `post-${index}`,
+        platform: 'instagram',
+        imageUrl: primaryMedia.type === 'image' ? primaryMedia.url : undefined,
+        videoUrl: primaryMedia.videoUrl || undefined,
+        carouselImages, // Array of all carousel media
+        postUrl,
+        caption,
+        hashtags,
+        mentions,
+        locationName: post.locationName || post.location?.name || undefined,
+        ownerUsername: post.ownerUsername || undefined,
+        timestamp: dateStr,
+        likes: post.likesCount || 0,
+        comments: post.commentsCount || 0,
+        type: 'Sidecar',
+        shortCode: post.shortCode,
       });
     } else {
+      // Single image or video post
       const imageUrl = post.displayUrl || post.thumbnailUrl || post.url;
       posts.push({
         id: post.shortCode || `post-${index}`,
         platform: 'instagram',
         imageUrl: proxyImageUrl(imageUrl),
         videoUrl: post.videoUrl ? proxyImageUrl(post.videoUrl) : undefined,
+        carouselImages: undefined, // No carousel
         postUrl,
-        caption: post.caption || '',
+        caption,
+        hashtags,
+        mentions,
+        locationName: post.locationName || post.location?.name || undefined,
+        ownerUsername: post.ownerUsername || undefined,
         timestamp: dateStr,
         likes: post.likesCount || 0,
         comments: post.commentsCount || 0,

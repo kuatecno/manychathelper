@@ -719,3 +719,100 @@ model DataExport {
   @@index([expiresAt])
 }
 
+// ============================================================================
+// INSTAGRAM POST CATEGORIZATION SYSTEM
+// ============================================================================
+
+// PostCategory - Categories for organizing Instagram posts (Products, Events, etc.)
+model PostCategory {
+  id              String    @id @default(cuid())
+  adminId         String    // Admin who owns this category
+
+  // Category details
+  name            String    // e.g., "Products", "Events", "Promotions"
+  description     String?
+  color           String?   // Hex color for UI display (e.g., "#FF5733")
+  icon            String?   // Icon name or emoji
+
+  // Settings
+  active          Boolean   @default(true)
+  displayOrder    Int       @default(0) // For sorting categories
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  postAssignments PostCategoryAssignment[]
+
+  @@unique([adminId, name]) // Prevent duplicate category names per admin
+  @@index([adminId])
+  @@index([active])
+}
+
+// InstagramPost - Instagram posts extracted from social media cache for categorization
+model InstagramPost {
+  id              String    @id @default(cuid())
+  adminId         String    // Admin who owns this post
+
+  // Instagram identifiers
+  shortCode       String    @unique // Instagram post short code (unique ID)
+  postUrl         String    // Full Instagram post URL
+
+  // Post content
+  caption         String?   // Post caption text
+  type            String    // "image", "video", "Sidecar" (carousel)
+
+  // Media
+  imageUrl        String?   // Primary image URL (proxied)
+  videoUrl        String?   // Video URL if applicable (proxied)
+  carouselImages  String?   // JSON array of image URLs for carousel posts
+
+  // Metadata extracted from caption
+  hashtags        String?   // JSON array of hashtags
+  mentions        String?   // JSON array of @mentions
+  locationName    String?   // Location name if available
+
+  // Engagement metrics
+  likes           Int       @default(0)
+  comments        Int       @default(0)
+  timestamp       DateTime  // When post was published on Instagram
+
+  // Website publishing
+  websiteEnabled  Boolean   @default(false) // Show on website?
+  customTitle     String?   // Override caption for website
+  customDescription String? // Additional description for website
+  displayOrder    Int       @default(0) // Order for website display
+
+  // Sync tracking
+  lastSyncedAt    DateTime  @default(now()) // When engagement was last synced
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  categoryAssignments PostCategoryAssignment[]
+
+  @@index([adminId])
+  @@index([shortCode])
+  @@index([websiteEnabled])
+  @@index([timestamp])
+  @@index([displayOrder])
+}
+
+// PostCategoryAssignment - Junction table for post-to-category many-to-many relationship
+model PostCategoryAssignment {
+  id              String    @id @default(cuid())
+  postId          String
+  categoryId      String
+  assignedAt      DateTime  @default(now())
+  assignedBy      String?   // Admin ID who made the assignment
+
+  // Relations
+  post            InstagramPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category        PostCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, categoryId]) // Prevent duplicate assignments
+  @@index([postId])
+  @@index([categoryId])
+  @@index([assignedAt])
+}
+

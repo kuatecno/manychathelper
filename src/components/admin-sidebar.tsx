@@ -17,6 +17,7 @@ import {
   Zap,
   Scan,
   ShieldCheck,
+  Instagram,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'IG Verification', href: '/verification', icon: ShieldCheck },
   { name: 'AI Chat', href: '/ai-chat', icon: MessageSquare },
   { name: 'Core Flows', href: '/flows', icon: Zap },
+  { name: 'IG Posts', href: '/posts/instagram', icon: Instagram },
   { name: 'Contacts', href: '/users', icon: UserCircle },
   { name: 'Settings', href: '/settings/manychat', icon: Settings },
 ];
