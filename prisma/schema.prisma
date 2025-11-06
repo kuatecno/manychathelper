@@ -26,6 +26,8 @@ model Admin {
   customFields    CustomField[]
   instagramVerifications InstagramVerification[]
   verificationApiKeys VerificationApiKey[]
+  webhookSubscriptions WebhookSubscription[]
+  dataExports     DataExport[]
 }
 
 // User model - stores Instagram users who connect via Manychat
@@ -47,6 +49,8 @@ model User {
   optedInInstagram Boolean  @default(false)
   optedInWhatsapp  Boolean  @default(false)
   optedInTelegram  Boolean  @default(false)
+  exportConsentGiven Boolean @default(false) // User consent for data export to external CRMs
+  exportConsentAt DateTime? // When export consent was given
   subscribedAt    DateTime?
   lastTextInput   String?
   lastSyncedAt    DateTime? // Track when data was last synced from Manychat
@@ -597,5 +601,121 @@ model ApiUsage {
   @@index([endpoint])
   @@index([platform])
   @@index([cacheHit])
+}
+
+// ============================================================================
+// WEBHOOK & DATA EXPORT SYSTEM FOR CRM INTEGRATION
+// ============================================================================
+
+// WebhookSubscription - Manage webhook endpoints for real-time CRM sync
+model WebhookSubscription {
+  id              String    @id @default(cuid())
+  adminId         String    // Admin who owns this webhook
+
+  // Webhook configuration
+  url             String    // Endpoint to POST data to
+  events          String    // JSON array of subscribed events (e.g., ["user.created", "booking.created"])
+  secret          String    // Secret for HMAC signature verification
+  active          Boolean   @default(true)
+
+  // Retry configuration
+  retryAttempts   Int       @default(3)
+  retryDelay      Int       @default(60) // Seconds between retries
+  timeoutMs       Int       @default(10000) // Request timeout in milliseconds
+
+  // Status tracking
+  lastDeliveryAt  DateTime?
+  lastDeliveryStatus String? // success, failed
+  failedCount     Int       @default(0) // Total failed deliveries
+  successCount    Int       @default(0) // Total successful deliveries
+
+  // Metadata
+  name            String?   // Friendly name for this webhook
+  description     String?
+  metadata        String?   // JSON for additional configuration
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  deliveries      WebhookDelivery[]
+
+  @@index([adminId])
+  @@index([active])
+  @@index([lastDeliveryAt])
+}
+
+// WebhookDelivery - Track individual webhook deliveries for monitoring
+model WebhookDelivery {
+  id              String    @id @default(cuid())
+  subscriptionId  String    // Which webhook subscription
+
+  // Event details
+  event           String    // Event type (e.g., "user.updated")
+  payload         String    // JSON payload sent
+  payloadSizeBytes Int?     // Size of payload
+
+  // Delivery details
+  status          String    // pending, success, failed
+  statusCode      Int?      // HTTP status code received
+  responseBody    String?   // Response from webhook endpoint (truncated)
+  errorMessage    String?   // Error if failed
+
+  // Retry tracking
+  attempt         Int       @default(1) // Which attempt this is (1, 2, 3)
+  nextRetryAt     DateTime? // When to retry if failed
+
+  // Performance
+  durationMs      Int?      // How long the request took
+
+  sentAt          DateTime  @default(now())
+
+  subscription    WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([sentAt])
+  @@index([event])
+  @@index([nextRetryAt])
+}
+
+// DataExport - Audit log for data exports and external access
+model DataExport {
+  id              String    @id @default(cuid())
+  adminId         String    // Admin who performed the export
+
+  // Export details
+  exportType      String    // csv, json, xlsx, webhook, api_access
+  recordType      String    // users, bookings, qr_scans, all
+  recordCount     Int       // Number of records exported
+  fields          String    // JSON array of fields included
+
+  // Filters applied
+  filters         String?   // JSON object of filters used
+  dateRangeStart  DateTime? // If date range filter was applied
+  dateRangeEnd    DateTime?
+
+  // Delivery details
+  fileHash        String?   // SHA-256 hash of export file (if file export)
+  fileSizeBytes   Int?      // Size of export file
+  destinationUrl  String?   // If sent to webhook/FTP
+  downloadCount   Int       @default(0) // How many times file was downloaded
+
+  // User consent tracking
+  includesWithoutConsent Boolean @default(false) // Flag if any users without export consent
+
+  // Metadata
+  initiatedBy     String    // User ID or system identifier
+  ipAddress       String?   // IP that triggered export
+  metadata        String?   // JSON for additional context
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime? // When to delete export file (if applicable)
+
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([exportType])
+  @@index([recordType])
+  @@index([expiresAt])
 }
 
