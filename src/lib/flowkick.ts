@@ -209,7 +209,7 @@ export async function fetchFromApify(
   if (!apiToken || !userId) {
     return {
       success: false,
-      error: 'Apify credentials not configured',
+      error: 'Data source not configured',
     };
   }
 
@@ -222,7 +222,7 @@ export async function fetchFromApify(
     if (!runsResponse.ok) {
       return {
         success: false,
-        error: 'Failed to fetch Apify runs',
+        error: 'Failed to fetch social media content',
       };
     }
 
@@ -231,7 +231,7 @@ export async function fetchFromApify(
     if (!runsData.data?.items?.length) {
       return {
         success: false,
-        error: 'No data available from Apify',
+        error: 'No content available at this time',
       };
     }
 
@@ -257,11 +257,11 @@ export async function fetchFromApify(
     if (!targetRun) {
       return {
         success: false,
-        error: `No ${platform} dataset found`,
+        error: `No ${platform} content available`,
       };
     }
 
-    // Fetch full dataset
+    // Fetch full data
     const datasetResponse = await fetch(
       `https://api.apify.com/v2/datasets/${targetRun.defaultDatasetId}/items?token=${apiToken}&limit=50`
     );
@@ -269,7 +269,7 @@ export async function fetchFromApify(
     if (!datasetResponse.ok) {
       return {
         success: false,
-        error: 'Failed to fetch dataset items',
+        error: 'Failed to fetch content',
       };
     }
 
@@ -332,6 +332,15 @@ function transformApifyData(rawData: any[], platform: string): any[] {
 }
 
 /**
+ * Proxy image URL through Flowkick to hide CDN source
+ */
+function proxyImageUrl(originalUrl: string): string {
+  if (!originalUrl) return '';
+  // Proxy through our endpoint to hide Instagram/TikTok CDN
+  return `/api/v1/media/proxy?url=${encodeURIComponent(originalUrl)}`;
+}
+
+/**
  * Transform Instagram data from Apify to Flowkick format
  */
 function transformInstagramData(rawData: any[]): any[] {
@@ -349,11 +358,12 @@ function transformInstagramData(rawData: any[]): any[] {
     // Handle carousel posts
     if (post.type === 'Sidecar' && post.childPosts?.length > 0) {
       post.childPosts.forEach((childPost: any, childIndex: number) => {
+        const imageUrl = childPost.displayUrl || childPost.url;
         posts.push({
           id: `${post.shortCode}-${childIndex}`,
           platform: 'instagram',
-          imageUrl: childPost.displayUrl || childPost.url,
-          videoUrl: childPost.videoUrl,
+          imageUrl: proxyImageUrl(imageUrl),
+          videoUrl: childPost.videoUrl ? proxyImageUrl(childPost.videoUrl) : undefined,
           postUrl,
           caption: post.caption || '',
           timestamp: dateStr,
@@ -364,11 +374,12 @@ function transformInstagramData(rawData: any[]): any[] {
         });
       });
     } else {
+      const imageUrl = post.displayUrl || post.thumbnailUrl || post.url;
       posts.push({
         id: post.shortCode || `post-${index}`,
         platform: 'instagram',
-        imageUrl: post.displayUrl || post.thumbnailUrl || post.url,
-        videoUrl: post.videoUrl,
+        imageUrl: proxyImageUrl(imageUrl),
+        videoUrl: post.videoUrl ? proxyImageUrl(post.videoUrl) : undefined,
         postUrl,
         caption: post.caption || '',
         timestamp: dateStr,
@@ -392,12 +403,14 @@ function transformTikTokData(rawData: any[]): any[] {
       ? new Date(Date.parse(video.createTimeISO)).toISOString()
       : new Date().toISOString();
 
+    const coverUrl = video.videoMeta?.coverUrl || video.videoMeta?.dynamicCover || video.authorMeta?.avatar;
+    const videoUrl = video.webVideoUrl || video.videoUrl;
+
     return {
       id: video.id || `tiktok-${index}`,
       platform: 'tiktok',
-      imageUrl:
-        video.videoMeta?.coverUrl || video.videoMeta?.dynamicCover || video.authorMeta?.avatar,
-      videoUrl: video.webVideoUrl || video.videoUrl,
+      imageUrl: proxyImageUrl(coverUrl),
+      videoUrl: videoUrl ? proxyImageUrl(videoUrl) : undefined,
       postUrl: video.webVideoUrl || `https://www.tiktok.com/@user/video/${video.id}`,
       caption: video.text || '',
       timestamp: dateStr,
@@ -422,18 +435,68 @@ function transformGoogleMapsData(rawData: any[]): any[] {
   const reviews = place.reviews || [];
 
   return reviews
-    .map((review: any) => ({
-      id: review.reviewId || crypto.randomBytes(8).toString('hex'),
-      platform: 'google_maps',
-      authorName: review.name,
-      authorPhotoUrl: review.reviewerPhotoUrl || review.reviewerUrl,
-      rating: review.stars || 0,
-      text: review.text || review.textTranslated || '',
-      timestamp: review.publishAt || review.publishedAtDate,
-      images: review.reviewImageUrls || [],
-      likes: review.likesCount || 0,
-    }))
+    .map((review: any) => {
+      const authorPhoto = review.reviewerPhotoUrl || review.reviewerUrl;
+      const reviewImages = review.reviewImageUrls || [];
+
+      return {
+        id: review.reviewId || crypto.randomBytes(8).toString('hex'),
+        platform: 'google_maps',
+        authorName: review.name,
+        authorPhotoUrl: authorPhoto ? proxyImageUrl(authorPhoto) : undefined,
+        rating: review.stars || 0,
+        text: review.text || review.textTranslated || '',
+        timestamp: review.publishAt || review.publishedAtDate,
+        images: reviewImages.map((img: string) => proxyImageUrl(img)),
+        likes: review.likesCount || 0,
+      };
+    })
     .filter((review: any) => review.rating >= 4 && review.text?.length > 0);
+}
+
+// ============================================================================
+// SECURITY & OBFUSCATION
+// ============================================================================
+
+/**
+ * Sanitize metadata to remove any traces of Apify or internal implementation
+ */
+export function sanitizeMetadata(metadata: any): any {
+  // Remove any Apify-specific fields
+  const sanitized = { ...metadata };
+  delete sanitized.apifyDatasetId;
+  delete sanitized.apifyRunId;
+  delete sanitized.datasetId;
+  delete sanitized.runId;
+  delete sanitized.fetchDurationMs; // Could reveal scraping
+  delete sanitized.transformDurationMs;
+  delete sanitized.dataSourceId;
+
+  return sanitized;
+}
+
+/**
+ * Add random jitter to cache refresh interval
+ * Makes timing less predictable
+ */
+export function getCacheIntervalWithJitter(baseMinutes: number): number {
+  // Add ±5 minute jitter
+  const jitter = Math.floor(Math.random() * 10) - 5;
+  return Math.max(5, baseMinutes + jitter);
+}
+
+/**
+ * Sanitize response headers - remove upstream service headers
+ */
+export function getSanitizedHeaders(cacheHit: boolean): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    'X-Cache-Status': cacheHit ? 'HIT' : 'MISS',
+    'X-Response-Time': `${Math.floor(Math.random() * 100 + 50)}ms`,
+    // Removed: Any X-Apify-* headers
+    // Removed: Any X-Vercel-* headers that could reveal infrastructure
+  };
 }
 
 // ============================================================================

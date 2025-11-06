@@ -5,6 +5,9 @@ import {
   fetchFromApify,
   updateCache,
   trackApiUsage,
+  sanitizeMetadata,
+  getCacheIntervalWithJitter,
+  getSanitizedHeaders,
 } from '@/lib/flowkick';
 
 /**
@@ -126,7 +129,7 @@ export async function GET(
         }
       );
 
-      // Set cache headers
+      // Build response with sanitized metadata
       const response = NextResponse.json({
         success: true,
         data: cachedData,
@@ -134,23 +137,22 @@ export async function GET(
           platform,
           count: cachedData.length,
           cached: true,
-          cachedAt: cache.fetchedAt,
-          expiresAt: cache.expiresAt,
+          fetchedAt: cache.fetchedAt.toISOString(),
         },
       });
 
-      response.headers.set(
-        'Cache-Control',
-        'public, s-maxage=300, stale-while-revalidate=600'
-      );
-      response.headers.set('X-Cache-Status', 'HIT');
+      // Set sanitized headers (no traces of Apify or infrastructure)
+      const headers = getSanitizedHeaders(true);
+      Object.entries(headers).forEach(([key, value]) => {
+        response.headers.set(key, value);
+      });
 
       return response;
     }
 
-    console.log(`[Flowkick] Cache MISS for ${client.name} / ${platform} - Fetching from Apify`);
+    console.log(`[Flowkick] Cache MISS for ${client.name} / ${platform} - Fetching fresh data`);
 
-    // Fetch fresh data from Apify
+    // Fetch fresh data
     const apifyResult = await fetchFromApify(
       client.id,
       platform,
@@ -183,13 +185,14 @@ export async function GET(
       );
     }
 
-    // Update cache
+    // Update cache with jitter to avoid predictable patterns
+    const refreshInterval = getCacheIntervalWithJitter(client.cacheRefreshInterval);
     await updateCache(
       client.id,
       platform,
       'posts',
       apifyResult.data,
-      client.cacheRefreshInterval,
+      refreshInterval,
       {
         apifyDatasetId: apifyResult.metadata?.datasetId,
         apifyRunId: apifyResult.metadata?.runId,
@@ -215,7 +218,7 @@ export async function GET(
       }
     );
 
-    // Return fresh data
+    // Return fresh data with sanitized metadata
     const response = NextResponse.json({
       success: true,
       data: apifyResult.data,
@@ -224,17 +227,14 @@ export async function GET(
         count: apifyResult.data.length,
         cached: false,
         fetchedAt: new Date().toISOString(),
-        expiresAt: new Date(
-          Date.now() + client.cacheRefreshInterval * 60 * 1000
-        ).toISOString(),
       },
     });
 
-    response.headers.set(
-      'Cache-Control',
-      'public, s-maxage=300, stale-while-revalidate=600'
-    );
-    response.headers.set('X-Cache-Status', 'MISS');
+    // Set sanitized headers
+    const headers = getSanitizedHeaders(false);
+    Object.entries(headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
 
     return response;
   } catch (error) {

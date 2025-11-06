@@ -242,8 +242,8 @@ if ($data->success) {
 {
   "id": "CxYz123",
   "platform": "instagram",
-  "imageUrl": "https://...",
-  "videoUrl": "https://...",
+  "imageUrl": "https://flowkick.kua.cl/api/v1/media/proxy?url=...",
+  "videoUrl": "https://flowkick.kua.cl/api/v1/media/proxy?url=...",
   "postUrl": "https://instagram.com/p/CxYz123",
   "caption": "Amazing coffee! ☕ #coffee #cafe",
   "timestamp": "2025-11-05T10:30:00.000Z",
