@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { isCoreFlowField, getTrackerFieldInfo } from '@/lib/core-flows';
+import { filterVisibleTags } from '@/lib/hidden-tags';
 
 interface User {
   id: string;
@@ -420,22 +421,25 @@ export default function UsersPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {user.tags && user.tags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {user.tags.slice(0, 2).map((tag, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">
-                              {tag.name}
-                            </Badge>
-                          ))}
-                          {user.tags.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{user.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No tags</span>
-                      )}
+                      {(() => {
+                        const visibleTags = user.tags ? filterVisibleTags(user.tags) : [];
+                        return visibleTags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {visibleTags.slice(0, 2).map((tag, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {tag.name}
+                              </Badge>
+                            ))}
+                            {visibleTags.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{visibleTags.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No tags</span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">

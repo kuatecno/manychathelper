@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { isCoreFlowField, getTrackerFieldInfo } from '@/lib/core-flows';
+import { filterVisibleTags } from '@/lib/hidden-tags';
 
 interface UserDetail {
   id: string;
@@ -282,7 +283,7 @@ export default function UserDetailPage() {
           <TabsTrigger value="custom-fields">
             Custom Fields ({regularFields.length})
           </TabsTrigger>
-          <TabsTrigger value="tags">Tags ({user.tags.length})</TabsTrigger>
+          <TabsTrigger value="tags">Tags ({filterVisibleTags(user.tags).length})</TabsTrigger>
           <TabsTrigger value="history" onClick={() => history.length === 0 && loadHistory()}>
             <HistoryIcon className="h-4 w-4 mr-2" />
             History
@@ -523,18 +524,21 @@ export default function UserDetailPage() {
               <CardTitle>Tags</CardTitle>
             </CardHeader>
             <CardContent>
-              {user.tags.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No tags</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {user.tags.map((tag, idx) => (
-                    <Badge key={idx} variant="outline" className="text-sm">
-                      <TagIcon className="h-3 w-3 mr-1" />
-                      {tag.name}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                const visibleTags = filterVisibleTags(user.tags);
+                return visibleTags.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">No visible tags</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {visibleTags.map((tag, idx) => (
+                      <Badge key={idx} variant="outline" className="text-sm">
+                        <TagIcon className="h-3 w-3 mr-1" />
+                        {tag.name}
+                      </Badge>
+                    ))}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -604,20 +608,23 @@ export default function UserDetailPage() {
                         </div>
                       )}
 
-                      {snapshot.tags.length > 0 && (
-                        <div className="mt-3 pt-3 border-t">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
-                            Tags:
+                      {(() => {
+                        const visibleTags = filterVisibleTags(snapshot.tags);
+                        return visibleTags.length > 0 && (
+                          <div className="mt-3 pt-3 border-t">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Tags:
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {visibleTags.map((tag: any, idx: number) => (
+                                <Badge key={idx} variant="outline">
+                                  {tag.name}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            {snapshot.tags.map((tag: any, idx: number) => (
-                              <Badge key={idx} variant="outline">
-                                {tag.name}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
