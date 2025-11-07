@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
@@ -10,14 +8,15 @@ import { Prisma } from '@prisma/client';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Get adminId from header
+    const adminId = request.headers.get('x-admin-id');
 
-    if (!session?.user?.email) {
+    if (!adminId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const admin = await prisma.admin.findUnique({
-      where: { email: session.user.email },
+      where: { id: adminId },
     });
 
     if (!admin) {

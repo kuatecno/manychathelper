@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -20,15 +18,16 @@ const categorySchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Get adminId from header
+    const adminId = request.headers.get('x-admin-id');
 
-    if (!session?.user?.email) {
+    if (!adminId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get admin
     const admin = await prisma.admin.findUnique({
-      where: { email: session.user.email },
+      where: { id: adminId },
     });
 
     if (!admin) {
@@ -95,15 +94,16 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Get adminId from header
+    const adminId = request.headers.get('x-admin-id');
 
-    if (!session?.user?.email) {
+    if (!adminId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get admin
     const admin = await prisma.admin.findUnique({
-      where: { email: session.user.email },
+      where: { id: adminId },
     });
 
     if (!admin) {

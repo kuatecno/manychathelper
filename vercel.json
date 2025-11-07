@@ -9,7 +9,7 @@
     },
     {
       "path": "/api/cron/flowkick-refresh-cache",
-      "schedule": "*/30 * * * *"
+      "schedule": "30 2 * * *"
     }
   ]
 }
