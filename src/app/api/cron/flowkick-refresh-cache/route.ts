@@ -4,17 +4,7 @@ import { fetchFromApify, updateCache } from '@/lib/flowkick';
 
 /**
  * Cron job to refresh cached social media data
- * Should run every 15-30 minutes
- *
- * Add to vercel.json:
- * {
- *   "crons": [
- *     {
- *       "path": "/api/cron/flowkick-refresh-cache",
- *       "schedule": "*/30 * * * *"
- *     }
- *   ]
- * }
+ * Configured in vercel.json to run periodically
  */
 export async function GET(request: NextRequest) {
   // Verify cron secret
