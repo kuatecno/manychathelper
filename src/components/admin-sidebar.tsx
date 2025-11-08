@@ -18,6 +18,7 @@ import {
   Scan,
   ShieldCheck,
   Instagram,
+  Server,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ const navigation = [
   { name: 'Core Flows', href: '/flows', icon: Zap },
   { name: 'IG Posts', href: '/posts/instagram', icon: Instagram },
   { name: 'Contacts', href: '/users', icon: UserCircle },
+  { name: 'System', href: '/settings/system', icon: Server },
   { name: 'Settings', href: '/settings/manychat', icon: Settings },
 ];
 
