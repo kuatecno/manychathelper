@@ -50,6 +50,13 @@ function LoginForm() {
       // Store admin info in localStorage (simple approach)
       localStorage.setItem('admin', JSON.stringify(data.admin));
 
+      // Debug log
+      console.log('Login successful, admin stored:', data.admin);
+      console.log('localStorage admin:', localStorage.getItem('admin'));
+
+      // Small delay to ensure localStorage is written
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Redirect to dashboard
       router.push('/');
     } catch (error) {

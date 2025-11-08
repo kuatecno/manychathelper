@@ -17,8 +17,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Check if user is authenticated
     const admin = localStorage.getItem('admin');
+    console.log('AuthProvider check - pathname:', pathname, 'admin:', admin);
+
     if (!admin) {
+      console.log('No admin found, redirecting to login');
       router.push('/login');
+    } else {
+      console.log('Admin found:', JSON.parse(admin));
     }
   }, [pathname, router]);
 
