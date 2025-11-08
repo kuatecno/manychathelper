@@ -9,7 +9,18 @@ import {
 
 // Validation schema for field mapping
 const fieldMappingSchema = z.object({
-  qrField: z.string(),
+  qrField: z.enum([
+    'qr_code',
+    'qr_type',
+    'qr_scanned_at',
+    'qr_scanned_by',
+    'qr_expires_at',
+    'qr_is_valid',
+    'qr_campaign',
+    'qr_tool_name',
+    'qr_created_at',
+    'qr_metadata',
+  ]),
   manychatFieldId: z.string(),
   manychatFieldName: z.string(),
   enabled: z.boolean(),
